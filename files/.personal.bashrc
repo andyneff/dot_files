@@ -265,10 +265,13 @@ source ~/.git-prompt
 #PS1='\[\e[40;93m\]\w\[\e[0m\]\n[\u@\h \W]$ '
 #PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "'
 GIT_PS1_SHOWCOLORHINTS=1
-GIT_PS1_SHOWUNTRACKEDFILES=1
-GIT_PS1_SHOWUPSTREAM=verbose
-GIT_PS1_SHOWSTASHSTATE=1
-GIT_PS1_SHOWDIRTYSTATE=1
+if [ "${OS-}" != "Windows_NT" ]; then
+  # Too slow on windows, CreateProcess is too slow
+  GIT_PS1_SHOWUNTRACKEDFILES=1
+  GIT_PS1_SHOWUPSTREAM=verbose
+  GIT_PS1_SHOWSTASHSTATE=1
+  GIT_PS1_SHOWDIRTYSTATE=1
+fi
 # If one of the HPC machines
 if [ -n "${BC_HOST+set}" ]; then
   # disable this for speed
