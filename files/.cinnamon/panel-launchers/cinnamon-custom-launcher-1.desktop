@@ -1,0 +1,7 @@
+[Desktop Entry]
+Comment=
+Terminal=false
+Name=Restart Synergy
+Exec=bash -c "pkill synergys; synergys --daemon --debug INFO --name viola --enable-crypto --log /home/andy/.config/Synergy/synergys.log -c /home/andy/.config/Synergy/synergy_1.8.8.conf --address :24800"
+Type=Application
+Icon=xapp-search-wrap-symbolic

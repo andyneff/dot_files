@@ -1,0 +1,103 @@
+[user]
+	name = Andy Neff
+	email = andy@visionsystemsinc.com
+[push]
+	default = current
+[alias]
+	st1 = !git -c color.status=always status -s | while IFS='' read line\\\\; do IFS=' ' blah=($line); echo $(stat -c %z ${blah[1]}) ${line}; IFS='';" done | sort | cut -c 37-
+	st = !git -c color.status=always status -s | "while IFS='' read line; do IFS=' ' blah=($line); echo \"$(stat -c %z ${blah[1]}) ${line}\"; IFS=''; done" | sort | cut -c 37-
+	l = log --decorate --graph
+	l2 = !"git log --decorate --graph $(git branch --color=never -a --contains $(git rev-list HEAD | tail -n1) | sed '/ detached at /d; s|^..||; s| -> .*||')"
+	pushall = !git remote | xargs -L1 -I{} git push {}
+	fetchall = fetch --all
+	branches = !git branch && git submodule foreach git branch
+	comaster = submodule foreach git checkout master
+	statuses = !git status \"${@}\" && git submodule foreach git status
+	sstatus = -c status.submodulesummary=1 status
+	commits = !git submodule foreach ~/.git_commits \"${@}\" && git commit -a
+	reattach = submodule foreach git checkout master
+	ci = commit --interactive
+	ai = add --interactive
+	unadd = reset HEAD
+	blameline = log -L
+	versions = log --pretty=format:%H
+	lhist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+	lpatch = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short --patch
+	lfile = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short --stat
+	logitall = !git log --graph --decorate --all $(git reflog show --format=%H)
+	vdiff = difftool
+	diffss = diff --submodule=short
+	pretendchanged = update-index --no-assume-unchanged
+	pretendunchanged = update-index --assume-unchanged
+	cat = !git show $1:"$2"
+	newest-ancestor = merge-base
+	oldest-ancestor = !bash -c 'diff --old-line-format='' --new-line-format='' <(git rev-list --first-parent "${1:-master}") <(git rev-list --first-parent "${2:-HEAD}") | head -1' -
+	dangling-commits = !git show $(git fsck --lost-found | grep '^dangling commit' | awk '{print $3}')
+	bb = repo bb
+	ignore = ! echo >> "$(git rev-parse --git-path info/exclude)"
+	unignore = "!f(){ sed -i '/^'\"${1}\"'$/d' \"$(git rev-parse --git-path info/exclude)\"; };f"
+	#unignore = "!f(){ python -c s=__import__\\(\\'sys\\'\\)\\;print\\(s.argv\\) sed -i '/^'\"${1}\"'$/d' \"$(git rev-parse --git-path info/exclude)\"; };f"
+
+	#For example, To move branch master to sha a3423b3, git move-branch master a3423b3
+	move-branch = "!git fetch -f $(pwd) $2:$1"
+
+	all-children = "!git rev-list --children $(git reflog --pretty=%H) | grep ^$(git rev-list -n 1 ${1-HEAD}) | cut -d' ' -f2-"
+	detach = "!git checkout `git rev-parse HEAD`"
+	branch-merged = branch --merged HEAD
+	apply-gitattributes = !git checkout-index --force-all && git submodule foreach --recursive git checkout-index --force-all
+	# Apply permissions that git has to files
+	apply-permissions = !git diff -p -R --no-color --submodule=diff | grep -E "^(diff|(old|new) mode)" --color=never | git apply
+	# Print the list of commits different in the submodules between the current diff
+	check-submodules = !"IFS=$'\n'; for x in $(git config --name-only --file .gitmodules --get-regexp '^submodule\\..*\\.path$'); do git diff --submodule=log \"$(git config --file .gitmodules --get \"${x}\")\"; done"
+	# Fetches and update the ref of a branch, auto determining the remote name
+	update = !"remote=`git rev-parse --abbrev-ref $1@{upstream}`; remote_branch=${remote#*/}; remote=${remote%%/*}; git fetch ${remote} ${remote_branch}:${1}; :"
+	reflist = "for-each-ref --format='%(refname)'"
+	# git cherry-contains <commit> [refs]
+	# Prints each local branch containing an equivalent commit.
+	cherry-contains = "!f(){ local sha=\"$(git rev-parse --verify \"${1}\")\" || return 1; local refs=\"${2:-refs/heads/}\"; local branch; git for-each-ref --format='%(refname:short)' $refs | while IFS= read -r branch; do if ! git cherry \"${branch}\" \"${sha}\" \"${sha}^\" | grep -qE \"^\\+ ${sha}\"; then echo \"${branch}\"; fi; done; };f"
+	# git delete-remote-branch <remote> <branch>
+	delete-remote-branch = "!f(){ set -u; git push \"${1}\" --delete \"${2}\"; }; f"
+  # blog.filippo.io/git-fixup-amending-an-older-commit/
+  fixup = "!f() \
+    { : git commit ; \
+      local TARGET=$(git rev-parse \"$1\") && \
+      git commit --fixup=${TARGET} \"${@:2}\" && \
+      EDITOR=true git rebase -i --autostash --autosquash ${TARGET}^ || echo ABORTED you might want to run: git reset --soft HEAD~1; \
+    }; f"
+  fixitup = "!f() { git rebase -i --autostash --autosquash --rebase-merges \"$(git merge-base --octopus $(git unpushed HEAD))\"^; }; f"
+  unpushed = "!f() { git log ${1---branches} --format=%H --not --remotes; }; f"
+[http]
+	sslVerify = true
+[color]
+	ui = always
+# [http "https://vsi-ri.com"]
+# 	sslVerify = true
+# 	sslCAInfo = /home/andy/.ssh/vsi-ca.crt
+[credential]
+	helper = cache --timeout=3600
+[core]
+	editor = /home/andy/bin/git_edit
+[diff]
+	tool = meld
+# [status]
+# 	submoduleSummary = true
+[difftool]
+	prompt = false
+[merge]
+	tool = andy
+#	tool=kdiff3
+[mergetool]
+	prompt = false
+	keepBackup = false
+	keepTemporaries = false
+[mergetool.andy]
+	cmd = mitm_kdiff3 "$LOCAL" "$REMOTE" "$MERGED" "$BASE"
+[fetch]
+	prune = true
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[log]
+  follow = true

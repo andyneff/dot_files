@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+# Add to .gitconfig
+# [merge]
+#	tool = mitmkdiff3
+# [mergetool.mitmkdiff3]
+#	cmd = mitm_kdiff3 "$LOCAL" "$REMOTE" "$MERGED" "$BASE"
+
+: ${MERGE_TOOLS_DIR=$(git --exec-path)/mergetools}
+
+blob_to_commit()
+{
+  git log --all --pretty=format:'%T %H' | while read tree commit; do 
+    if git ls-tree -r $tree | grep -q $1; then 
+      echo $commit
+      break
+    fi
+  done
+}
+
+LOCAL=$1
+REMOTE=$2
+MERGED=$3
+BASE=$4
+
+blob_to_commit2()
+{
+  git log --all --pretty=format:'%T %H' | while read tree commit; do 
+    if git ls-tree -r $tree | grep -q $1; then 
+      echo $commit
+    fi
+  done
+}
+
+
+local_sha1=$(git ls-files -u -- "$MERGED" | awk '{if ($3==2) print $2;}')
+remote_sha1=$(git ls-files -u -- "$MERGED" | awk '{if ($3==3) print $2;}')
+base_sha1=$(git ls-files -u -- "$MERGED" | awk '{if ($3==1) print $2;}')
+
+local_commit_sha1=$(blob_to_commit $local_sha1)
+remote_commit_sha1=$(blob_to_commit $remote_sha1)
+
+if [ "${base_sha1}" != "" ]; then
+  base_commit_sha1=$(blob_to_commit $base_sha1)
+  exec kdiff3 --auto \
+    --L1 "$MERGED (Base) ${base_commit_sha1}" \
+    --L2 "$MERGED (Local) ${local_commit_sha1}" \
+    --L3 "$MERGED (Remote) ${remote_commit_sha1}" \
+    -o "$MERGED" "$BASE" "$LOCAL" "$REMOTE" \
+  >/dev/null 2>&1
+else
+  exec kdiff3 --auto \
+    --L1 "$MERGED (Local) ${local_commit_sha1}" \
+    --L2 "$MERGED (Remote) ${remote_commit_sha1}" \
+    -o "$MERGED" "$LOCAL" "$REMOTE" \
+  >/dev/null 2>&1
+fi

@@ -1,0 +1,53 @@
+#!/usr/bin/env false bash
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+
+source "${SCRIPT_DIR}/external/vsi_common/linux/web_tools.bsh"
+source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
+source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
+
+function setup()
+{
+  add_if ~/.bashrc .personal.bashrc \
+'if [ -r ~/.personal.bashrc ]; then
+  . ~/.personal.bashrc
+fi'
+
+  add_after_if ~/.ssh/config "Match all" "  Include personal.config"
+
+  openssh_version
+  if [ "${ssh_version[0]}" -ge "8" ]; then
+    add_after_if ~/.ssh/config "Match all" "  Include personal.8.config"
+  fi
+
+  add_after_if ~/.gitconfig "[include]" "  path = ~/.personal.gitconfig"
+
+  if meet_requirements "$(git_version)" '>=2.11.4'; then
+    add_after_if ~/.gitconfig "[include]" "  path = ~/.personal.2.11.4.gitconfig"
+  fi
+
+  if [ "${OS-}" = "Windows_NT" ]; then
+    add_after_if ~/.gitconfig "[include]" "  path = ~/.personal.windows.gitconfig"
+  fi
+
+  if [ ! -x ~/bin/deviceQuery ]; then
+    if [ "${OS-}" != "Windows_NT" ]; then
+      download_to_file "https://www.vsi-ri.com/bin/deviceQuery" ~/bin/deviceQuery
+      chmod 755 ~/bin/deviceQuery
+    fi
+  fi
+
+  ### Special permissions
+  chmod 600 ~/.ssh/config
+  chmod 600 "${REPO_DIR}/files/.ssh/personal.config"
+  chmod 600 "${REPO_DIR}/files/.ssh/personal.8.config"
+}
+
+function unsetup()
+{
+  sed -i '/Include personal\.config/d' ~/.ssh/config
+  sed -i '/Include personal\.8\.config/d' ~/.ssh/config
+  sed -i '/path = ~\/\.personal\.gitconfig/d' ~/.gitconfig
+  sed -i '/path = ~\/\.personal\.2\.11\.4\.gitconfig/d' ~/.gitconfig
+  sed -i '/path = ~\/\.personal\.windows\.gitconfig/d' ~/.gitconfig
+}

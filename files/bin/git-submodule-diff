@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+#****f* git/submodule_diff
+# NAME
+#   git_submodule_diff - show commit diff between expected and current submodule
+# DESCRIPTION
+#   When changing version of a superproject, submodules will often show up as
+#   being different. Often the right answer is to run "git submodule update".
+#   However, sometimes this is not the right answer. It is tedious to switch to
+#   a submodule, look through the logs for the SHAs in question, and understand
+#   what is really different. 
+#
+#   This script will easily "git log" the commits in each version so that you
+#   can get a quick understanding of what is different in the submodule.
+# INPUTS
+#   $1 - path to submodule
+#   [$2...] - Additional arguments to be sent to git log
+# EXAMPLE
+#   git_submodule_diff path_of_submodule --oneline
+# AUTHOR
+#   Andy Neff
+#***
+
+set -eu
+
+if !(($#)); then
+  echo "usage: git submodule-diff <submodule path> [<log options>...]"
+  exit 2
+fi
+
+sm_path="$1"
+shift 1
+
+submodule_diff="$(git diff --no-color --word-diff=porcelain "${sm_path}")"
+
+current_sha=$(grep -E '^\+[a-f0-9]+' <<< "${submodule_diff}")
+expected_sha=$(grep -E '^\-[a-f0-9]+' <<< "${submodule_diff}")
+current_sha=${current_sha#+}
+expected_sha=${expected_sha#-}
+
+cd "${sm_path}"
+
+echo
+echo "Showing commits in current (${current_sha:0:7}) but not in expected (${expected_sha:0:7})"
+echo -------------------------------------------
+echo
+git log --decorate --graph ${@+"${@}"} ${expected_sha}..${current_sha}
+
+echo
+echo "Showing commits in expected (${expected_sha:0:7}) but not in current (${current_sha:0:7})"
+echo -------------------------------------------
+echo
+git log --decorate --graph ${@+"${@}"} ${current_sha}..${expected_sha}
