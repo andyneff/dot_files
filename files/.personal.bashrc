@@ -337,7 +337,7 @@ PROMPT_COMMAND='__ps1_rv=$?; __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
 '  echo "\[\e[41m\]${__ps1_rv}\[\e[0m\]";'\
 'else'\
 '  echo "${__ps1_rv}";'\
-'fi)'"${OS_PROMPT}"' \W" "]$ "; my_vte_prompt_command'
+'fi)'"${OS_PROMPT}"' \W" "]$ "; touch ~/.last_ran_command; my_vte_prompt_command'
 # PROMPT_COMMAND+=$'; printf "\033]0;%s@%s(%s):%s\033\\\\" "${USER}" "${HOSTNAME%%.*}" -1 "${PWD}"'
 # To add a custom terminal title, add '; printf "\033]0;CUSTOM TITLE\007"' to
 # the *end* of PROMPT_COMMAND (After vte_command, which sets it too). You can
@@ -737,8 +737,8 @@ function ruler()
 function auto_agent()
 {
   # Source file if this has been run before
-  if [ -f ~/.ssh-agent ]; then
-    source ~/.ssh-agent > /dev/null
+  if [ -f ~/.ssh/ssh-agent ]; then
+    source ~/.ssh/ssh-agent > /dev/null
   fi
 
   # See if the agent is still running, maybe rebooted
@@ -747,50 +747,68 @@ function auto_agent()
   # If not running
   if [ "$?" != "0" ]; then
     # Cleanup
-    rm -f ~/.ssh/ssh-agent >& /dev/null
+    rm -f ~/.ssh/ssh-agent_pipe >& /dev/null
     # Run again, using a socket in my home dir, storing the env vars in root of
     # home dir
-    ssh-agent -a ~/.ssh/ssh-agent > ~/.ssh-agent
-    # Auto updates timestamp everytime it is sourced
-    # echo 'touch ${BASH_SOURCE[0]}' >> ~/.ssh-agent
-    echo 'touch ~/.ssh-agent' >> ~/.ssh-agent
+    ssh-agent -a ~/.ssh/ssh-agent_pipe > ~/.ssh/ssh-agent
 
-    source ~/.ssh-agent
+    source ~/.ssh/ssh-agent
 
-    # Set that I ran it. This talks to the logout script
-    export SSH_AGENT_STARTED=1
+    # Auto kill after a week of not being used
+    function watch_ssh_agent()
+    {
+      # Do one touch just to cover corner conditions
+      touch ~/.last_ran_command
+      # Store the last bash pid running this function
+      echo $$ > ~/.ssh/.watch_ssh.pid
+      while kill -0 $SSH_AGENT_PID && (( $(date +%s) - $(date +%s -r ~/.last_ran_command) < 1*3600*24 )); do
+        # In case this function get called multiple time, last one wins, only need one
+        if [ "$(cat ~/.ssh/.watch_ssh.pid)" != "$$" ]; then
+          return
+        fi
+        sleep 60
+      done
+      kill ${SSH_AGENT_PID}
+    }
+    export -f watch_ssh_agent
 
     if command -v screen &> /dev/null; then
-      # Auto kill after a week of not being used
-      screen -d -m -S auto_kill_ssh_agent bash -c 'while kill -0 $SSH_AGENT_PID && (( $(date +%s) - $(date +%s -r ~/.ssh-agent) < 7*3600*24 )); do sleep 60; done; kill ${SSH_AGENT_PID}'
+      screen -d -m -S auto_kill_ssh_agent bash -c watch_ssh_agent
+    elif [ "${OS-}" = "Windows_NT" ]; then
+      # https://superuser.com/a/1657415/352118
+      if command -v mintty &> /dev/null; then
+        mintty bash -mc '(watch_ssh_agent) &> /dev/null < /dev/null &'
+      # elif command -v cygstart &> /dev/null; then
+      else
+        echo "Woops, fixme"
+      fi
     else
-      {
-        while kill -0 $SSH_AGENT_PID && (( $(date +%s) - $(date +%s -r ~/.ssh-agent) < 7*3600*24 )); do
-          sleep 60
-        done
-        kill ${SSH_AGENT_PID}
-      } &
+      watch_ssh_agent &
     fi
+    unset watch_ssh_agent
   fi
+
   # If the file has been created successfully?
-  if [ -f ~/.ssh-agent ]; then
+  if [ -f ~/.ssh/ssh-agent ]; then
     # Load it
-    source ~/.ssh-agent > /dev/null
+    source ~/.ssh/ssh-agent > /dev/null
 
     # Check to see if my usename is in the list, this is a fairly flexible test
     if [[ $(ssh-add -l) != *$(id -u -n)* ]]; then
       # Load my ssh key of interest
-      ssh-add ~/.ssh/id_rsa_bb
-      ssh-add ~/.ssh/id_rsa_gh
+      ssh-add ~/.ssh/id_rsa_bb ~/.ssh/id_rsa_gh
     fi
   fi
+
+  # Set that it is running. This talks to the logout script
+  export SSH_AGENT_RUNNING=1
 }
 
 if [ -e ~/.ssh/auto_agent ]; then
   auto_agent
 else
-  if [ -f ~/.ssh-agent ]; then
-    source ~/.ssh-agent > /dev/null
+  if [ -f ~/.ssh/ssh-agent ]; then
+    source ~/.ssh/ssh-agent > /dev/null
   fi
 fi
 
