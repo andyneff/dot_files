@@ -761,11 +761,12 @@ function auto_agent()
       touch ~/.last_ran_command
       # Store the last bash pid running this function
       echo $$ > ~/.ssh/.watch_ssh.pid
-      while kill -0 $SSH_AGENT_PID && (( $(date +%s) - $(date +%s -r ~/.last_ran_command) < 1*3600*24 )); do
+      while kill -0 "${SSH_AGENT_PID}" && (( $(date '+%s') - $(date -r ~/.last_ran_command '+%s') < 1*3600*24 )); do
         # In case this function get called multiple time, last one wins, only need one
         if [ "$(cat ~/.ssh/.watch_ssh.pid)" != "$$" ]; then
           return
         fi
+
         sleep 60
       done
       kill ${SSH_AGENT_PID}
