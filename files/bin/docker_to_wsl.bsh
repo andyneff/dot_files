@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# Should be run in MinGW
+
+if [ "$#" -lt "2" ]; then
+  echo "Usage: $0 {docker_image_name} {WSL name}" >&2
+  exit 1
+fi
+
+: ${USERNAME=$(id -un)}
+
+docker_image="${1}"
+wsl_name="${2}"
+
+wsl_dir=~/AppData/Local/WSLs/"${wsl_name}"
+temp_tar_file=~/AppData/Local/WSLs/"${wsl_name}.tar"
+mkdir -p "${wsl_dir}"
+
+# Convert image -> container -> tar
+docker_container="$(docker create ${docker_image})"
+docker export "${docker_container}" -o "${temp_tar_file}"
+docker container rm "${docker_container}"
+
+# import tar
+wsl --import "${wsl_name}" "${wsl_dir}" "${temp_tar_file}"
+rm "${temp_tar_file}"
+
+function run_wsl()
+{ # PATH (and other things) from MinGW will interfere with WSL, bad combo
+  local wsl_bin="$(command -v wsl)"
+  /usr/bin/env -i "${wsl_bin}" -d "${wsl_name}" "${@}"
+}
+
+function install_dep()
+{
+  # run_wsl bash -xvc '
+  #   while ! command -v '"${1}"' &> /dev/null; do
+  #     echo "Cannot find \"'"${1}"'\", please enter command to install it, or blank to skip"
+  #     read -rp "Command to install '"${1}"': " cmd
+  #     if [ -z "${cmd}" ]; then
+  #       declare -p cmd
+  #       break
+  #     fi
+  #     eval "${cmd}"
+  #   done'
+  # I could get the above to work, but it's so hacky and inconsistent with how
+  # quotes really work, I'd rather do without
+  # No work: wsl -d Fedora -- bash -xvc "cmd=foo; echo \"\${cmd}\""
+  # Works: wsl -d Fedora -- bash -xvc "cmd=foo; echo \"\\\${cmd}\""
+
+  while ! run_wsl bash -c "command -v \"${1}\"" &> /dev/null; do
+    echo "Cannot find '${1}', please enter command to install it, or blank to skip"
+    read -rp "Command to install '${1}' (sh to interact): " cmd
+    if [ -z "${cmd}" ]; then
+        break
+    fi
+    run_wsl ${cmd}
+  done
+}
+
+# Setup initial user
+# install_dep useradd
+# install_dep passwd
+install_dep sudo
+
+run_wsl useradd -G wheel "${USERNAME}"
+run_wsl passwd "${USERNAME}"
+
+run_wsl bash -c "printf '[user]\ndefault=${USERNAME}' > /etc/wsl.conf;
+                 rm /.dockerenv"
+
+wsl -t "${wsl_name}"
+
+echo
+echo "Get started run: wsl -d ${wsl_name}"
+echo "To use in Windows Terminal add:"
+echo
+# quick and dirty fake uuid
+uuid="$(cat /dev/urandom | LC_ALL=iso-8859-1 tr -dc 'a-f0-9' | head -c 32)"
+uuid="${uuid:0:8}-${uuid:8:4}-${uuid:12:4}-${uuid:16:4}-${uuid:20:12}"
+echo '            {
+                "guid": "{'"${uuid}"'}",
+                "hidden": false,
+                "name": "'"${wsl_name}"'",
+                "source": "Windows.Terminal.Wsl"
+            }
+'
+
+echo
+echo "To remove:"
+echo "wsl --unregister ${wsl_name}"
