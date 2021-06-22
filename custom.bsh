@@ -46,6 +46,17 @@ fi'
     add_after_if ~/.gitconfig "[include]" "  path = ~/.windows.gitconfig"
   fi
 
+  # .docker/config
+  if [ "${OS-}" = "Windows_NT"]; then
+    backup_and_replace ~/.docker/config_windows.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
+  elif [ -n "${WSL_DISTRO_NAME+set}" ]; then
+    backup_and_replace ~/.docker/config_wsl.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
+  elif [[ ${OSTYPE-} = darwin* ]]; then
+    backup_and_replace ~/.docker/config_macos.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
+  else
+    backup_and_replace ~/.docker/config_linux.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
+  fi
+
   # Other
   if [ ! -x ~/bin/deviceQuery ]; then
     if [ "${OS-}" != "Windows_NT" ]; then
@@ -57,6 +68,10 @@ fi'
 
 function unsetup()
 {
+  if [ -L ~/.docker/config ]; then
+    rm ~/.docker/config
+  fi
+
   sed -i '/Include personal\.config/d' ~/.ssh/config
   sed -i '/Include openssh_8\.config/d' ~/.ssh/config
   sed -i '/Include windows\.config/d' ~/.ssh/config
