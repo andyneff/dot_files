@@ -788,21 +788,6 @@ function auto_agent()
     fi
     unset watch_ssh_agent
   fi
-
-  # If the file has been created successfully?
-  if [ -f ~/.ssh/ssh-agent ]; then
-    # Load it
-    source ~/.ssh/ssh-agent > /dev/null
-
-    # Check to see if my usename is in the list, this is a fairly flexible test
-    if [[ $(ssh-add -l) != *$(id -u -n)* ]]; then
-      # Load my ssh key of interest
-      ssh-add ~/.ssh/id_rsa_bb ~/.ssh/id_rsa_gh
-    fi
-  fi
-
-  # Set that it is running. This talks to the logout script
-  export SSH_AGENT_RUNNING=1
 }
 
 if [ -e ~/.ssh/auto_agent ]; then

@@ -9,7 +9,7 @@ source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
 function setup()
 {
   # Bashrc
-  add_if ~/.bashrc .personal.bashrc \
+  add_if ~/.bashrc '\.personal\.bashrc' \
 'if [ -r ~/.personal.bashrc ]; then
   . ~/.personal.bashrc
 fi'
