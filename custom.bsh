@@ -6,6 +6,16 @@ source "${SCRIPT_DIR}/external/vsi_common/linux/web_tools.bsh"
 source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
 source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
 
+# Binary downloads
+windows_downloads=(https://www.vsi-ri.com/bin/deviceQuery
+                   https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe)
+linux_downloads=(""
+                 https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64)
+macos_downloads=(""
+                 https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64)
+download_filesnames=(deviceQuery
+                     jq)
+
 function setup()
 {
   # Bashrc
@@ -47,7 +57,7 @@ fi'
   fi
 
   # .docker/config
-  if [ "${OS-}" = "Windows_NT"]; then
+  if [ "${OS-}" = "Windows_NT" ]; then
     backup_and_replace ~/.docker/config_windows.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
   elif [ -n "${WSL_DISTRO_NAME+set}" ]; then
     backup_and_replace ~/.docker/config_wsl.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
@@ -58,12 +68,24 @@ fi'
   fi
 
   # Other
-  if [ ! -x ~/bin/deviceQuery ]; then
-    if [ "${OS-}" != "Windows_NT" ]; then
-      download_to_file "https://www.vsi-ri.com/bin/deviceQuery" ~/bin/deviceQuery
-      chmod 755 ~/bin/deviceQuery
-    fi
+  local downloads=()
+  local extention=''
+  if [ "${OS-}" = "Windows_NT" ]; then
+    downloads=(${windows_downloads[@]+"${windows_downloads[@]}"})
+    extention='.exe'
+  elif [[ ${OSTYPE-} = darwin* ]]; then
+    downloads=(${macos_downloads[@]+"${macos_downloads[@]}"})
+  else
+    downloads=(${linux_downloads[@]+"${linux_downloads[@]}"})
   fi
+
+  local index
+  for index in "${!downloads[@]}"; do
+    if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${download_filesnames[index]}${extention}" ]; then
+      download_to_file "${downloads[index]}" ~/bin/"${download_filesnames[index]}${extention}"
+      chmod 755 ~/bin/"${download_filesnames[index]}${extention}"
+    fi
+  done
 }
 
 function unsetup()
