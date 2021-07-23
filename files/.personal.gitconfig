@@ -66,6 +66,8 @@
     }; f"
   fixitup = "!f() { git rebase -i --autostash --autosquash --rebase-merges \"$(git merge-base --octopus $(git unpushed HEAD))\"^; }; f"
   unpushed = "!f() { git log ${1---branches} --format=%H --not --remotes; }; f"
+  # A "nice" way to look at the shas of a submodule
+  logsubmodule = "!f() { git log --pretty=format:$'%C(yellow)%h%C(reset) %ad | %s%C(auto)%d %C(cyan)[%an]' --date=short --patch --color=always --submodule=log ${1} | grep -v $'\\x1b\\[3[12]m  [<>]' | less -R; }; f"
 [http]
 	sslVerify = true
 [color]

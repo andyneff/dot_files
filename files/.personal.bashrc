@@ -999,3 +999,49 @@ function queue_status()
   cat "${pipe}" | sed -e '/./,$!d' -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
   rm -f "${pipe}"
 }
+
+# Parses "rows cols" for a specific tty
+# Args: [$1] - TTY to check, e.g. /dev/pts/1
+#       Default is to use current tty
+function get_tty_rows_cols()
+{
+  if (( $# )); then
+    stty -F "${1}" -a
+  else
+    stty -a
+  fi | sed -En ':combine
+                $bdone
+                N
+                bcombine
+                :done
+                s|; *|\n|g
+                s|(.*)rows ([0-9]+)(.*)|\2 \1\3|
+                s|([0-9]+) .*columns ([0-9]+).*|\1 \2|
+                p'
+}
+
+# Pipe a command's output to another tty, making sure rows and cols match
+# - Will not rows and col changing as the command runs
+# Args: $1 - tty to match, e.g. "/dev/pts/1"
+#       [$2...] command to execute and redirect to $1
+# If only one argument is specified, it will start another bash session to match
+# the other tty, but not redirect output for you.
+function pipe_pts()
+{
+  local pts="${1}"
+  shift 1
+  local orig_rows_cols=($(get_tty_rows_cols))
+  local rows_cols=($(get_tty_rows_cols "${pts}"))
+
+  if (( $# )); then
+    stty rows "${rows_cols[0]}"
+    stty columns "${rows_cols[1]}"
+    ${@+"${@}"} > "${pts}" 2> "${pts}"
+  else
+    stty rows "${rows_cols[0]}"
+    stty columns "${rows_cols[1]}"
+    bash
+  fi
+  stty rows "${orig_rows_cols[0]}"
+  stty columns "${orig_rows_cols[1]}"
+}
