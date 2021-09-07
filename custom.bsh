@@ -58,13 +58,13 @@ fi'
 
   # .docker/config
   if [ "${OS-}" = "Windows_NT" ]; then
-    backup_and_replace ~/.docker/config_windows.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
+    backup_and_replace ~/.docker/config_windows.json ~/.docker/config.json "${DOT_BACKUP_DIR}/.docker/config"
   elif [ -n "${WSL_DISTRO_NAME+set}" ]; then
-    backup_and_replace ~/.docker/config_wsl.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
+    backup_and_replace ~/.docker/config_wsl.json ~/.docker/config.json "${DOT_BACKUP_DIR}/.docker/config"
   elif [[ ${OSTYPE-} = darwin* ]]; then
-    backup_and_replace ~/.docker/config_macos.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
+    backup_and_replace ~/.docker/config_macos.json ~/.docker/config.json "${DOT_BACKUP_DIR}/.docker/config"
   else
-    backup_and_replace ~/.docker/config_linux.json ~/.docker/config "${DOT_BACKUP_DIR}/.docker/config"
+    backup_and_replace ~/.docker/config_linux.json ~/.docker/config.json "${DOT_BACKUP_DIR}/.docker/config"
   fi
 
   # Other
@@ -76,6 +76,7 @@ fi'
   elif [[ ${OSTYPE-} = darwin* ]]; then
     downloads=(${macos_downloads[@]+"${macos_downloads[@]}"})
   else
+    local THIS_OS=linux
     downloads=(${linux_downloads[@]+"${linux_downloads[@]}"})
   fi
 
@@ -86,6 +87,25 @@ fi'
       chmod 755 ~/bin/"${download_filesnames[index]}${extention}"
     fi
   done
+
+  if [ "${THIS_OS-}" = "linux" ] && [ ! -e ~/bin/docker-credential-secretservice ] && [ ! -e ~/bin/docker-credential-pass ]; then
+    # Run level 3 is headless, no graphics. The simple existance of this executable will affect how docker login works
+    # By default, Docker looks for the native binary on each of the platforms, i.e.
+    # "osxkeychain" on macOS, "wincred" on windows, and "pass" on Linux. A special
+    # case is that on Linux, Docker will fall back to the "secretservice" binary if
+    # it cannot find the "pass" binary. If none of these binaries are present, it
+    # stores the credentials (i.e. password) in base64 encoding in the config files
+    # described above.
+    if [[ "$(runlevel)" =~ 5 ]]; then
+      download_to_file https://github.com/docker/docker-credential-helpers/releases/download/v0.6.4/docker-credential-secretservice-v0.6.4-amd64.tar.gz ~/bin/dch.tgz
+    else
+      download_to_file https://github.com/docker/docker-credential-helpers/releases/download/v0.6.4/docker-credential-pass-v0.6.4-amd64.tar.gz ~/bin/dch.tgz
+    fi
+    pushd ~/bin &> /dev/null
+      tar xf dch.tgz
+      rm dch.tgz
+    popd &> /dev/null
+  fi
 }
 
 function unsetup()
