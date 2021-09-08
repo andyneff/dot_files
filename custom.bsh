@@ -105,6 +105,9 @@ fi'
       tar xf dch.tgz
       rm dch.tgz
     popd &> /dev/null
+
+    # Seriously, they can't even get basic permissions right
+    chmod 755 ~/bin/docker-credential-*
   fi
 }
 
