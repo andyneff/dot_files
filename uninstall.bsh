@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+export DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+"${DOT_DIR}/external/dot/uninstall.bsh" ${@+"${@}"}
