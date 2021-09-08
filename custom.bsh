@@ -109,6 +109,15 @@ fi'
     # Seriously, they can't even get basic permissions right
     chmod 755 ~/bin/docker-credential-*
   fi
+
+  source "${SCRIPT_DIR}/external/vsi_common/linux/just_git_airgap_repo.bsh"
+  pushd "${DOT_DIR}" &> /dev/null
+    convert_git_remote_http_to_git
+  popd &> /dev/null
+
+  pushd "${SCRIPT_DIR}" &> /dev/null
+    convert_git_remote_http_to_git
+  popd &> /dev/null
 }
 
 function unsetup()
