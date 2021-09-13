@@ -7,9 +7,9 @@ source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
 source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
 
 # Binary downloads
-windows_downloads=(https://www.vsi-ri.com/bin/deviceQuery
+windows_downloads=(""
                    https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe)
-linux_downloads=(""
+linux_downloads=(https://www.vsi-ri.com/bin/deviceQuery
                  https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64)
 macos_downloads=(""
                  https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64)
