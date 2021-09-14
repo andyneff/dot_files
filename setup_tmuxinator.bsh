@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+if [ -z ${VSI_COMMON_DIR+set} ]; then
+  VSI_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/external/dot/external/vsi_common"; pwd)"
+fi
+
+source "${VSI_COMMON_DIR}/linux/dir_tools.bsh"
+
+if ! command -v gem; then
+  # Work in progress, doesn't work great on Fedora
+  # Very limited binaries: https://rvm.io/binaries/
+  # gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+  # curl -sSL https://get.rvm.io | bash -s stable --ignore-dotfiles
+  # ~/.rvm/bin/rvm install ruby
+
+  make_temp_path temp_dir -d
+  curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o "${temp_dir}/miniconda.sh"
+  bash "${temp_dir}/miniconda.sh" -b -p "${temp_dir}/conda" -s
+  "${temp_dir}/conda/bin/conda" create -y -p ~/.ruby -c conda-forge ruby ${@+"${@}"}
+
+  ln -s ~/.ruby/bin/ruby ~/bin
+  ln -s ~/.ruby/bin/gem ~/bin
+fi
+
+if ! command -v tmuxinator; then
+  gem install --user-install tmuxinator
+fi
+
+# Gem already does something like this
+# ln -s ~/.gem/ruby/gems/tmuxinator-*/bin/tmuxinator ~/bin/tmuxinator
