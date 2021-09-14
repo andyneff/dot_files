@@ -5,6 +5,7 @@ if [ -z ${VSI_COMMON_DIR+set} ]; then
 fi
 
 source "${VSI_COMMON_DIR}/linux/dir_tools.bsh"
+source "${VSI_COMMON_DIR}/linux/just_files/just_install_functions.bsh"
 
 if ! command -v gem; then
   # Work in progress, doesn't work great on Fedora
@@ -14,9 +15,8 @@ if ! command -v gem; then
   # ~/.rvm/bin/rvm install ruby
 
   make_temp_path temp_dir -d
-  curl -L https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o "${temp_dir}/miniconda.sh"
-  bash "${temp_dir}/miniconda.sh" -b -p "${temp_dir}/conda" -s
-  "${temp_dir}/conda/bin/conda" create -y -p ~/.ruby -c conda-forge ruby ${@+"${@}"}
+  conda-install --dir "${temp_dir}/conda"
+  "${conda_exe}" create -y -p ~/.ruby -c conda-forge ruby ${@+"${@}"}
 
   ln -s ~/.ruby/bin/ruby ~/bin
   ln -s ~/.ruby/bin/gem ~/bin
