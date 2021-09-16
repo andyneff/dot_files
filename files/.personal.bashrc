@@ -412,11 +412,20 @@ VIRTUAL_ENV_DISABLE_PROMPT=1
 
 function _de_cleanup()
 {
+  local nullglob=1
+  if \shopt -q nullglob; then
+    nullglob=0
+  fi
+
   for f in ~/.ssh/docker_*; do
     if ! \fuser "${f}" >& /dev/null; then
       \rm "${f}"
     fi
   done
+
+  if [ "${nullglob}" = "1" ]; then
+    \shopt -u nullglob
+  fi
 }
 
 #**
