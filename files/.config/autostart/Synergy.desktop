@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Exec=synergys --daemon --debug INFO --name viola --enable-crypto --log /home/andy/.config/Synergy/synergys.log -c /home/andy/.config/Synergy/synergy_1.8.8.conf --address :24800
+Exec=synergys --daemon --debug INFO --name viola --enable-crypto --log /home/andy/.config/Synergy/synergys.log -c /home/andy/.config/Synergy/synergy_1.14.1.conf --address :24800
 X-GNOME-Autostart-enabled=true
 NoDisplay=false
 Hidden=false
