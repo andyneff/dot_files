@@ -5,6 +5,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 source "${SCRIPT_DIR}/external/vsi_common/linux/web_tools.bsh"
 source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
 source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
+source "${SCRIPT_DIR}/external/vsi_common/linux/compat.bsh"
 
 # Binary downloads
 windows_downloads=(""
@@ -22,6 +23,12 @@ function setup()
   add_if ~/.bashrc '\.personal\.bashrc' \
 'if [ -r ~/.personal.bashrc ]; then
   . ~/.personal.bashrc
+fi'
+
+  # Bash_profile - Most OSes have this by default, macOS does not
+  add_if ~/.bash_profile '~/.bashrc' \
+'if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
 fi'
 
   # ssh/config
@@ -134,11 +141,11 @@ function unsetup()
     rm ~/.docker/config
   fi
 
-  sed -i '/Include personal\.config/d' ~/.ssh/config
-  sed -i '/Include openssh_8\.config/d' ~/.ssh/config
-  sed -i '/Include windows\.config/d' ~/.ssh/config
-  sed -i '/Include linux\.config/d' ~/.ssh/config
-  sed -i '/path = ~\/\.personal\.gitconfig/d' ~/.gitconfig
-  sed -i '/path = ~\/\.2\.11\.4\.gitconfig/d' ~/.gitconfig
-  sed -i '/path = ~\/\.windows\.gitconfig/d' ~/.gitconfig
+  sed "${sed_flags_i[@]}" '/Include personal\.config/d' ~/.ssh/config
+  sed "${sed_flags_i[@]}" '/Include openssh_8\.config/d' ~/.ssh/config
+  sed "${sed_flags_i[@]}" '/Include windows\.config/d' ~/.ssh/config
+  sed "${sed_flags_i[@]}" '/Include linux\.config/d' ~/.ssh/config
+  sed "${sed_flags_i[@]}" '/path = ~\/\.personal\.gitconfig/d' ~/.gitconfig
+  sed "${sed_flags_i[@]}" '/path = ~\/\.2\.11\.4\.gitconfig/d' ~/.gitconfig
+  sed "${sed_flags_i[@]}" '/path = ~\/\.windows\.gitconfig/d' ~/.gitconfig
 }

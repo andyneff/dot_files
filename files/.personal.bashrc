@@ -33,9 +33,11 @@ HISTFILESIZE=2000
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 
-# If set, the pattern "**" used in a pathname expansion context will
-# match all files and zero or more directories and subdirectories.
-shopt -s globstar
+if [ "${BASH_VERSINFO[0]}" -gt "3" ]; then
+  # If set, the pattern "**" used in a pathname expansion context will
+  # match all files and zero or more directories and subdirectories.
+  shopt -s globstar
+fi
 
 # colored GCC warnings and errors
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
@@ -51,9 +53,10 @@ if ! shopt -oq posix; then
   fi
 fi
 
-if [ -x /usr/bin/mint-fortune ]; then
-     /usr/bin/mint-fortune
-fi
+bind '"\e[5C": forward-word'
+bind '"\e[5D": backward-word'
+bind '"\e[1;5C": forward-word'
+bind '"\e[1;5D": backward-word'
 
 function add_element_post ()
 {
@@ -325,7 +328,7 @@ elif [ -n "${WSL_DISTRO_NAME+set}" ]; then
 elif [ "${OS-}" = "Windows_NT" ]; then
   OS_PROMPT=" \[\e[34m\]Windows\[\e[0m\]"
 elif [[ ${OSTYPE-} = darwin* ]]; then
-  OS_PROMPT=" \[\e[37m\]macOS\[\e[0m\]"
+  OS_PROMPT=" \[\e[31m\]macOS\[\e[0m\]"
 else
   OS_PROMPT=" \[\e[32m\]Linux\[\e[0m\]"
 fi
@@ -629,8 +632,13 @@ function dcpfv2()
 
 alias dc_images_list='docker images -a -q | uniq'
 
-alias ls='ls --color=auto'
-alias lsd='ls --color=auto */ -lasd'
+if [[ ! ${OSTYPE} =~ darwin.* ]]; then
+  alias ls='ls --color=auto'
+  alias lsd='ls --color=auto */ -lasd'
+else
+  alias ls='ls -G'
+  alias lsd='ls -G */ -lasd'
+fi
 #alias grep="grep -rin --color=always"
 alias grep="grep_fun"
 

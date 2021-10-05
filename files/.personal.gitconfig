@@ -35,7 +35,7 @@
 	dangling-commits = !git show $(git fsck --lost-found | grep '^dangling commit' | awk '{print $3}')
 	bb = repo bb
 	ignore = ! echo >> "$(git rev-parse --git-path info/exclude)"
-	unignore = "!f(){ sed -i '/^'\"${1}\"'$/d' \"$(git rev-parse --git-path info/exclude)\"; };f"
+	unignore = "!f(){ sed -i ${OSTYPE:+""} '/^'\"${1}\"'$/d' \"$(git rev-parse --git-path info/exclude)\"; };f"
 	#unignore = "!f(){ python -c s=__import__\\(\\'sys\\'\\)\\;print\\(s.argv\\) sed -i '/^'\"${1}\"'$/d' \"$(git rev-parse --git-path info/exclude)\"; };f"
 
 	#For example, To move branch master to sha a3423b3, git move-branch master a3423b3
