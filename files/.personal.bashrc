@@ -264,6 +264,8 @@ add_element_post PATH ~/bin
 export PYTHONSTARTUP=~/.pyrc
 #export PS1='\[\e[40;93m\]\w\[\e[0m\]\n[\u@\h \W]$ '
 
+export GPG_TTY="$(tty)"
+
 source ~/.git-prompt
 #PS1='\[\e[40;93m\]\w\[\e[0m\]\n[\u@\h \W]$ '
 #PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "'
