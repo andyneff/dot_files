@@ -78,7 +78,7 @@
 [credential]
 	helper = cache --timeout=3600
 [core]
-	editor = /home/andy/bin/git_edit
+	editor = ~/bin/git_edit
 [diff]
 	tool = meld
 # [status]
