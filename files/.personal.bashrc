@@ -53,10 +53,23 @@ if ! shopt -oq posix; then
   fi
 fi
 
+# To discover bind key codes:
+# bind -p | grep quote
+# "\C-q": quoted-insert  # Ctrl+q, doesn't always work (e.g. cygwin)
+# "\C-v": quoted-insert  # Ctrl+v, doesn't work on Windows Terminal, but does work in Command prompt
+# "\e[2~": quoted-insert # Works in Windows Terminal!
+
+# ^[[H - "^[" is "\e" (Alt), so "\e[H"
+# ^? - "^" is "\C-" (Ctrl), so "\C-?"
+
+# ?+Left/Right
 bind '"\e[5C": forward-word'
 bind '"\e[5D": backward-word'
+# Ctrl+Left/Right
 bind '"\e[1;5C": forward-word'
 bind '"\e[1;5D": backward-word'
+# bind '"\e[1~": beginning-of-line' # Home
+# bind '"\e[4~": end-of-line'       # End
 
 function add_element_post ()
 {
@@ -1064,3 +1077,10 @@ function pipe_pts()
   stty rows "${orig_rows_cols[0]}"
   stty columns "${orig_rows_cols[1]}"
 }
+
+ascii_animation=" ⠁⠂⠄⡀⢀⢁⢂⢄⣀⣁⣂⣄⣠⣡⣢⣤⣥⣦⣴⣵⣶⣷⣾⣿⡿⣷⣾⡾⣶⡶⣦⣴⡴⣤⡤⣄⣠⡠⣀⡀⢀"
+function ascii_animate()
+{
+  ascii_animation_index=$((${ascii_animation_index-0}+1))
+  printf "\b${ascii_animation:ascii_animation_index%${#ascii_animation}:1}"
+} # while :; do ascii_animate; sleep 0.1; done
