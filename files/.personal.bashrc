@@ -881,6 +881,7 @@ pid = Popen(['pbsnodes', '-a', '-F', 'json'], stdout=PIPE)
 data = pid.communicate()[0]
 if sys.version_info[0] == 3:
   data = data.decode()
+data = '\n'.join([d for d in data.split('\n') if not d.endswith('"comment": ,')])
 data = json.loads(data)
 
 resource_keys = set()

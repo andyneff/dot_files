@@ -45,6 +45,7 @@
 	all-children = "??"
 	detach = "Detach the HEAD"
 	branch-merged = "List all already merged branches"
+  branch-unmerged = "List all unmerged branches where I'm the author of the last commit"
 	apply-gitattributes = "Recursively force applies gitattributes"
 	apply-permissions = "Recursively force applies the execute permission flag to files"
 	check-submodules = "Print the list of commits different in the submodules between the current diff. \"Rewind\" means that submodule is behind, and needs updating"
@@ -101,6 +102,7 @@
 	all-children = "!git rev-list --children $(git reflog --pretty=%H) | grep ^$(git rev-list -n 1 ${1-HEAD}) | cut -d' ' -f2-"
 	detach = "!git checkout `git rev-parse HEAD`"
 	branch-merged = branch --merged HEAD
+  branch-unmerged = "!git branch --color=never -a -q --no-merged HEAD | sed 's| -> .*||' | xargs -L1 git --no-pager show -s --oneline --author='Neff'"
 	apply-gitattributes = !git checkout-index --force-all && git submodule foreach --recursive git checkout-index --force-all
 	apply-permissions = !git diff -p -R --no-color --submodule=diff | grep -E "^(diff|(old|new) mode)" --color=never | git apply
 	# This should actually read IFS=$'\\n', but I'm not fixing it, because it adds a literal newline in the alias, and makes sure other things tolerate it
