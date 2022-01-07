@@ -77,13 +77,15 @@ fi'
   # Other
   local downloads=()
   local extention=''
+  local THIS_OS=linux
   if [ "${OS-}" = "Windows_NT" ]; then
+    THIS_OS=windows
     downloads=(${windows_downloads[@]+"${windows_downloads[@]}"})
     extention='.exe'
   elif [[ ${OSTYPE-} = darwin* ]]; then
+    THIS_OS=macos
     downloads=(${macos_downloads[@]+"${macos_downloads[@]}"})
   else
-    local THIS_OS=linux
     downloads=(${linux_downloads[@]+"${linux_downloads[@]}"})
   fi
 
@@ -96,14 +98,14 @@ fi'
   done
 
   if [ "${THIS_OS-}" = "linux" ] && [ ! -e ~/bin/docker-credential-secretservice ] && [ ! -e ~/bin/docker-credential-pass ]; then
-    # Run level 3 is headless, no graphics. The simple existance of this executable will affect how docker login works
+    # Run level 3 is headless, no graphics. The simple existence of this executable will affect how docker login works
     # By default, Docker looks for the native binary on each of the platforms, i.e.
     # "osxkeychain" on macOS, "wincred" on windows, and "pass" on Linux. A special
     # case is that on Linux, Docker will fall back to the "secretservice" binary if
     # it cannot find the "pass" binary. If none of these binaries are present, it
     # stores the credentials (i.e. password) in base64 encoding in the config files
     # described above.
-    if [[ "$(runlevel)" =~ 5 ]]; then
+    if [[ "$(runlevel 2>/dev/null || /sbin/runlevel 2>/dev/null || /usr/sbin/runlevel)" =~ 5 ]]; then
       download_to_file https://github.com/docker/docker-credential-helpers/releases/download/v0.6.4/docker-credential-secretservice-v0.6.4-amd64.tar.gz ~/bin/dch.tgz
     else
       download_to_file https://github.com/docker/docker-credential-helpers/releases/download/v0.6.4/docker-credential-pass-v0.6.4-amd64.tar.gz ~/bin/dch.tgz
@@ -132,6 +134,67 @@ fi'
 
     echo "Add this to bitbuket"
     cat ~/.ssh/id_ed25519_bb.pub
+  fi
+
+  # if [ "${OS-}" = "Windows_NT" -a ! -f ~/bin/python310/python.exe ] || \
+  #    [ ! -f ~/bin/python310/bin/python ]; then
+  #   source "${SCRIPT_DIR}/external/vsi_common/linux/just_files/just_install_functions.bsh"
+
+  #   PYTHON_VERSION=3.10.0 conda-python-install --download --dir ~/bin/python310/
+  # fi
+
+  # source ~/bin/python310/python_just_activate.bsh
+
+  # if [ ! -d ~/bin/aws.venv ]; then
+  #   "${PYTHON_EXE}" -m venv ~/bin/aws.venv
+  # fi
+
+  # if [ "${OS-}" = "Windows_NT" ]; then
+  #   AWS_VENV_BIN_DIR=~/bin/aws.venv/Scripts
+  # else
+  #   AWS_VENV_BIN_DIR=~/bin/aws.venv/bin
+  # fi
+
+  # if [ ! -f "${AWS_VENV_BIN_DIR}/aws" ]; then
+  #   "${AWS_VENV_BIN_DIR}/pip" install aws
+  # fi
+
+  if [ ! -f ~/bin/aws ]; then
+    case "${THIS_OS}" in
+      linux)
+        tempdir="$(mktemp -d)"
+        download_to_file https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip "${tempdir}/awscli.zip"
+        pushd "${tempdir}" &> /dev/null
+          unzip awscli.zip
+          ./aws/install -i ~/awscli -b ~/bin/
+        popd
+        rm -r "${tempdir}"
+        ;;
+      windows)
+        msiexec /ju https://awscli.amazonaws.com/AWSCLIV2.msi "AWSCLIV2=C:\Users\andy\awscli"
+        ;;
+      macos)
+        download_to_file https://awscli.amazonaws.com/AWSCLIV2.pkg aws.pkg
+        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+  <array>
+    <dict>
+      <key>choiceAttribute</key>
+      <string>customLocation</string>
+      <key>attributeSetting</key>
+      <string>"~"</string>
+      <key>choiceIdentifier</key>
+      <string>default</string>
+    </dict>
+  </array>
+</plist>" > aws.xml
+        installer -pkg aws.pkg \
+            -target ~/awscli \
+            -applyChoiceChangesXML aws.xml
+        rm aws.pkg aws.xml
+        ;;
+    esac
   fi
 }
 

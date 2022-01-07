@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 # Add to .gitconfig
 # [merge]
 #	tool = mitmkdiff3
@@ -10,8 +12,8 @@
 
 blob_to_commit()
 {
-  git log --all --pretty=format:'%T %H' | while read tree commit; do 
-    if git ls-tree -r $tree | grep -q $1; then 
+  git log --all --pretty=format:'%T %H' | while read tree commit; do
+    if git ls-tree -r $tree | grep -q $1; then
       echo $commit
       break
     fi
@@ -25,8 +27,8 @@ BASE=$4
 
 blob_to_commit2()
 {
-  git log --all --pretty=format:'%T %H' | while read tree commit; do 
-    if git ls-tree -r $tree | grep -q $1; then 
+  git log --all --pretty=format:'%T %H' | while read tree commit; do
+    if git ls-tree -r $tree | grep -q $1; then
       echo $commit
     fi
   done

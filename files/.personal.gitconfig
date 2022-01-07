@@ -33,7 +33,7 @@
 	pretendchanged = "Mark a file as changed, even if it isn't. \\x1b[33mUsage\\x1b[0m: git pretendchanged <filename>"
 	pretendunchanged = "Mark a file as not changed, even if it is. \\x1b[33mUsage\\x1b[0m: git pretendunchanged <filename>"
 	cat = "Show the contents of a file from specific commit. \\x1b[33mUsage\\x1b[0m: git cat <ref> <filename>"
-  newest-ancestor = "Finds the most recent commit that is common between two refs. \\x1b[33mUsage\\x1b[0m: git newest-ancestor <ref> <ref>"
+	newest-ancestor = "Finds the most recent commit that is common between two refs. \\x1b[33mUsage\\x1b[0m: git newest-ancestor <ref> <ref>"
 	oldest-ancestor = "Finds the oldest commit that is common between two refs. \\x1b[33mUsage\\x1b[0m: git newest-ancestor <ref> <ref>. \n\
                   For example, B is the oldest between D and G (https://stackoverflow.com/q/1527234):\n\
                     A--B--C--D\n\
@@ -45,7 +45,7 @@
 	all-children = "??"
 	detach = "Detach the HEAD"
 	branch-merged = "List all already merged branches"
-  branch-unmerged = "List all unmerged branches where I'm the author of the last commit"
+	branch-unmerged = "List all unmerged branches where I'm the author of the last commit"
 	apply-gitattributes = "Recursively force applies gitattributes"
 	apply-permissions = "Recursively force applies the execute permission flag to files"
 	check-submodules = "Print the list of commits different in the submodules between the current diff. \"Rewind\" means that submodule is behind, and needs updating"
@@ -56,6 +56,7 @@
 	fixup = "Git commit --amend, for commits other than the latest. \\x1b[33mUsage\\x1b[0m: git fixup <commit>. See: https://blog.filippo.io/git-fixup-amending-an-older-commit/"
 	fixitup = "Alternate fixup ??"
 	unpushed = "List branches not push on any remote: \\x1b[33mUsage\\x1b[0m: git unpushed [branch] "
+	ls-ignored = "List ignored files in the current repo"
 [alias]
 	aliases = "!for x in $(git config-name-only --get-regex alias | sed -n 's|^alias\\.||p'); do echo -e \"${x} - $(git config --get aliashelp.${x} || echo \\?\\?)\"; done"
 	# config-name-only can have extra lines if newlines are in the alias, such as check-submodules, so sed to filter those out, and remove .alias
@@ -103,7 +104,7 @@
 	all-children = "!git rev-list --children $(git reflog --pretty=%H) | grep ^$(git rev-list -n 1 ${1-HEAD}) | cut -d' ' -f2-"
 	detach = "!git checkout `git rev-parse HEAD`"
 	branch-merged = branch --merged HEAD
-  branch-unmerged = "!git branch --color=never -a -q --no-merged HEAD | sed 's| -> .*||' | xargs -L1 git --no-pager show -s --oneline --author='Neff'"
+	branch-unmerged = "!git branch --color=never -a -q --no-merged HEAD | sed 's| -> .*||' | xargs -L1 git --no-pager show -s --oneline --author='Neff'"
 	apply-gitattributes = !git checkout-index --force-all && git submodule foreach --recursive git checkout-index --force-all
 	apply-permissions = !git diff -p -R --no-color --submodule=diff | grep -E "^(diff|(old|new) mode)" --color=never | git apply
 	# This should actually read IFS=$'\\n', but I'm not fixing it, because it adds a literal newline in the alias, and makes sure other things tolerate it
@@ -121,6 +122,7 @@
 		}; f"
 	fixitup = "!f() { git rebase -i --autostash --autosquash --rebase-merges \"$(git merge-base --octopus $(git unpushed HEAD))\"^; }; f"
 	unpushed = "!f() { git log ${1---branches} --format=%H --not --remotes; }; f"
+	ls-ignored = "ls-files -io --exclude-standard"
 [http]
 	sslVerify = true
 [color]
