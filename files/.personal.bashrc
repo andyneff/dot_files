@@ -1085,3 +1085,66 @@ function ascii_animate()
   ascii_animation_index=$((${ascii_animation_index-0}+1))
   printf "\b${ascii_animation:ascii_animation_index%${#ascii_animation}:1}"
 } # while :; do ascii_animate; sleep 0.1; done
+
+#**
+# .. function:: copy_to_clipboard
+#
+# :Optional Arguments: ``[-t]`` - Use an x server to copy to clipboard
+# :Input: ``*stdin*`` - String to copy to clipboard
+#
+# Copy the content of stdin to your local clipboard. Uses OSC 52, which will work as long as your terminal supports it.
+#
+# ``tmux`` supposts this out of the box, vim needs a plugin: https://github.com/ojroques/vim-oscyank
+#
+# Verified terminals that support OSC 52:
+#
+# Works
+# * Windows Terminal
+# * iterm2
+# * "However, xterm supports it, alacritty supports it, hterm and many others..."
+# Does not work:
+# * gnome-terminal: https://gitlab.gnome.org/GNOME/vte/-/issues/2495
+# * konsole?: https://bugs.kde.org/show_bug.cgi?id=372116
+# * cygwin terminal
+# * putty
+# * mintty, it says it did in 2.6.1? I'm not sure: https://github.com/mintty/mintty/issues/258
+# * cygwin xterm
+# * macOS Terminal
+#**
+function copy_to_clipboard()
+{
+  if [ "${1-}" = "-x" ]; then
+    # X ways to do it
+    if command -v xsel &> /dev/null; then
+      xsel -i
+    elif command -v xclip &> /dev/null; then
+      xclip -sel clip -i
+    else
+      echo "xsel or xclip not installed" >&2
+      return 1
+    fi
+  elif [ "${1}" = "-t" ] || [ -n "${TMUX:+set}" ] || [[ ${TERM-} = tmux* ]]; then
+    echo -e "\033Ptmux;\033\033]52;c;$(base64 | tr -d '\n')\a\033\\"
+  # elif [ "${1}" = "-s" ] || [[ ${TERM-} = screen* ]]; then
+  # function screen_dcs() {
+  # # Screen limits the length of string sequences, so we have to break it up.
+  # # Going by the screen history:
+  # #   (v4.2.1) Apr 2014 - today: 768 bytes
+  # #   Aug 2008 - Apr 2014 (v4.2.0): 512 bytes
+  # #   ??? - Aug 2008 (v4.0.3): 256 bytes
+  # # Since v4.2.0 is only ~4 years old, we'll use the 256 limit.
+  # # We can probably switch to the 768 limit in 2022.
+  # local limit=256
+  # # We go 4 bytes under the limit because we're going to insert two bytes
+  # # before (\eP) and 2 bytes after (\e\) each string.
+  # echo "$1" | \
+  #   sed -E "s:.{$(( limit - 4 ))}:&\n:g" | \
+  #   sed -E -e 's:^:\x1bP:' -e 's:$:\x1b\\:' | \
+  #   tr -d '\n'
+  # }
+  else
+    # Todo: Integrate https://chromium.googlesource.com/apps/libapps/+/master/hterm/etc/osc52.sh
+    echo -e "\033]52;c;$(base64 | tr -d '\n')\a"
+  fi
+}
+
