@@ -1148,3 +1148,67 @@ function copy_to_clipboard()
   fi
 }
 
+#**
+# .. function:: x_forward_to_file
+#
+# :Arguments: * ``$1`` - The localhost X11 identifier currently being used.
+#             * ``$2`` - The local X server being spoofed
+#
+#  .. rubric:: Example:
+#
+#  .. code:: bash
+#
+#     x_forward_to_file 10 1 # localhost:10.0 to :1
+#**
+function x_forward_to_file()
+{
+  socat "UNIX-LISTEN:/tmp/.X11-unix/X${2},fork" "TCP:localhost:$((6000+${1}))"
+}
+
+# function reservegpu()
+# {
+#   local days
+#   local gpu
+#   days="${1-}"
+#   shift 1
+
+#   while [[ ! ${days} =~ ^[1-9][0-9]*$ ]] || [ "${days}" -lt "1" ] || [ "${days}" -gt 28 ]; do
+#     read -p "How many days do you expect to run? (1 - 28) " days
+#   done
+
+#   gpu="${1-}"
+#   shift 1
+
+#   while [ -n "${1+set}" ]; do
+#     reservegpu "${days}" "${1}"
+#     shift 1
+#   done
+
+#   while [[ ! ${gpu} =~ ^[0-9][0-9]*$ ]] || [ ! -c "/dev/nvidia${gpu}" ]; do
+#     read -p "Which gpu are you reserving? ($(echo /dev/nvidia[0-9]* | sed 's|/dev/nvidia||g')) " gpu
+#   done
+
+#   if [ -f "/tmp/.longgpu${gpu}" ]; then
+#     local owner=$(stat -c %U "/tmp/.longgpu${gpu}")
+#     if [ "$(id -un)" != "${owner}" ] && \
+#        [ "$(($(date +%s) - $(date +%s -r "/tmp/.longgpu${gpu}" 2>/dev/null || echo 0)))" -lt "0" ]; then
+#       echo "Sorry, GPU ${gpu} is reserved by ${owner}. Reservation denied!" >&2
+#       return 1
+#     fi
+#   fi
+
+#   rm -f "/tmp/.longgpu${gpu}"
+
+#   touch -d "+ ${days} days" "/tmp/.longgpu${gpu}"
+# }
+
+function ppcd()
+{
+  popd
+  pushd .
+}
+
+# if [ "${TERM_PROGRAM-}" = "tmux" ] && [ -z "${TMUX_OWD+set}" ]; then
+#   export TMUX_OWD="${PWD}"
+#   pushd .
+# fi
