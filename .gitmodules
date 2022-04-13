@@ -1,5 +1,5 @@
 [submodule "external/dot"]
-	path = external/dot
+	path = external/dot_core
 	url = https://github.com/andyneff/dot.git
 [submodule "additional_dots/60_private_dot_files"]
 	path = additional_dots/60_private_dot_files
