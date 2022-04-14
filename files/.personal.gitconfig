@@ -60,7 +60,7 @@
 [alias]
 	aliases = "!for x in $(git config-name-only --get-regex alias | sed -n 's|^alias\\.||p'); do echo -e \"${x} - $(git config --get aliashelp.${x} || echo \\?\\?)\"; done"
 	# config-name-only can have extra lines if newlines are in the alias, such as check-submodules, so sed to filter those out, and remove .alias
-	config-name-only = "!bash -c '. ~/.dot/external/dot/external/vsi_common/linux/versions.bsh; if meet_requirements \"$(git_version)\" \"<2.6\"; then git config \"${@}\" | awk \"{print \\$1}\"; else git config --name-only \"${@}\"; fi' --"
+	config-name-only = "!bash -c '. ~/.dot/external/dot_core/external/vsi_common/linux/versions.bsh; if meet_requirements \"$(git_version)\" \"<2.6\"; then git config \"${@}\" | awk \"{print \\$1}\"; else git config --name-only \"${@}\"; fi' --"
 	st1 = !git -c color.status=always status -s | while IFS='' read line\\\\; do IFS=' ' blah=($line); echo $(stat -c %z ${blah[1]}) ${line}; IFS='';" done | sort | cut -c 37-
 	st = !git -c color.status=always status -s | "while IFS='' read line; do IFS=' ' blah=($line); echo \"$(stat -c %z ${blah[1]}) ${line}\"; IFS=''; done" | sort | cut -c 37-
 	l = log --decorate --graph
@@ -158,3 +158,5 @@
 	required = true
 [log]
 	follow = true
+[init]
+	defaultBranch = main

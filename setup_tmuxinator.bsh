@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ -z ${VSI_COMMON_DIR+set} ]; then
-  VSI_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/external/dot/external/vsi_common"; pwd)"
+  VSI_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/external/dot_core/external/vsi_common"; pwd)"
 fi
 
 source "${VSI_COMMON_DIR}/linux/dir_tools.bsh"

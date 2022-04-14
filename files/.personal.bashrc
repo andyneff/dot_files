@@ -269,6 +269,11 @@ function dc_rmi(){
   docker rmi $1
 }
 
+function docker_list-tags()
+{
+  curl -sL "https://hub.docker.com/v1/repositories/${1}/tags" | jq -r '.[].name'
+}
+
 add_element_post PATH ~/bin
 #add_element_post PATH /opt/projects/just/vsi_common/linux
 #add_element_pre PYTHONPATH /home/andy/tools/

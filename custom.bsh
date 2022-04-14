@@ -2,20 +2,10 @@
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 
-source "${SCRIPT_DIR}/external/vsi_common/linux/web_tools.bsh"
-source "${SCRIPT_DIR}/external/vsi_common/linux/requirements.bsh"
-source "${SCRIPT_DIR}/external/vsi_common/linux/versions.bsh"
-source "${SCRIPT_DIR}/external/vsi_common/linux/compat.bsh"
-
-# Binary downloads
-windows_downloads=(""
-                   https://github.com/stedolan/jq/releases/download/jq-1.6/jq-win64.exe)
-linux_downloads=(https://www.vsi-ri.com/bin/deviceQuery
-                 https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64)
-macos_downloads=(""
-                 https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64)
-download_filesnames=(deviceQuery
-                     jq)
+source "${DOT_CORE_DIR}/external/vsi_common/linux/web_tools.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/requirements.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/versions.bsh"
+source "${DOT_CORE_DIR}/external/vsi_common/linux/compat.bsh"
 
 function setup()
 {
@@ -75,29 +65,8 @@ fi'
   fi
 
   # Other
-  local downloads=()
-  local extention=''
-  local THIS_OS=linux
-  if [ "${OS-}" = "Windows_NT" ]; then
-    THIS_OS=windows
-    downloads=(${windows_downloads[@]+"${windows_downloads[@]}"})
-    extention='.exe'
-  elif [[ ${OSTYPE-} = darwin* ]]; then
-    THIS_OS=macos
-    downloads=(${macos_downloads[@]+"${macos_downloads[@]}"})
-  else
-    downloads=(${linux_downloads[@]+"${linux_downloads[@]}"})
-  fi
 
-  local index
-  for index in "${!downloads[@]}"; do
-    if [ -n "${downloads[index]}" ] && [ ! -x ~/bin/"${download_filesnames[index]}${extention}" ]; then
-      download_to_file "${downloads[index]}" ~/bin/"${download_filesnames[index]}${extention}"
-      chmod 755 ~/bin/"${download_filesnames[index]}${extention}"
-    fi
-  done
-
-  if [ "${THIS_OS-}" = "linux" ] && [ ! -e ~/bin/docker-credential-secretservice ] && [ ! -e ~/bin/docker-credential-pass ]; then
+  if [ "${DOT_OS-}" = "linux" ] && [ ! -e ~/bin/docker-credential-secretservice ] && [ ! -e ~/bin/docker-credential-pass ]; then
     # Run level 3 is headless, no graphics. The simple existence of this executable will affect how docker login works
     # By default, Docker looks for the native binary on each of the platforms, i.e.
     # "osxkeychain" on macOS, "wincred" on windows, and "pass" on Linux. A special
@@ -119,12 +88,12 @@ fi'
     chmod 755 ~/bin/docker-credential-*
   fi
 
-  source "${SCRIPT_DIR}/external/vsi_common/linux/just_git_airgap_repo.bsh"
+  source "${DOT_CORE_DIR}/external/vsi_common/linux/just_git_airgap_repo.bsh"
   pushd "${DOT_DIR}" &> /dev/null
     convert_git_remote_http_to_git > /dev/null
   popd &> /dev/null
 
-  pushd "${SCRIPT_DIR}" &> /dev/null
+  pushd "${DOT_CORE_DIR}" &> /dev/null
     convert_git_remote_http_to_git > /dev/null
   popd &> /dev/null
 
@@ -138,7 +107,7 @@ fi'
 
   # if [ "${OS-}" = "Windows_NT" -a ! -f ~/bin/python310/python.exe ] || \
   #    [ ! -f ~/bin/python310/bin/python ]; then
-  #   source "${SCRIPT_DIR}/external/vsi_common/linux/just_files/just_install_functions.bsh"
+  #   source "${DOT_CORE_DIR}/external/vsi_common/linux/just_files/just_install_functions.bsh"
 
   #   PYTHON_VERSION=3.10.0 conda-python-install --download --dir ~/bin/python310/
   # fi
@@ -160,7 +129,7 @@ fi'
   # fi
 
   if [ ! -f ~/bin/aws ]; then
-    case "${THIS_OS}" in
+    case "${DOT_OS}" in
       linux)
         tempdir="$(mktemp -d)"
         download_to_file https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip "${tempdir}/awscli.zip"
@@ -203,6 +172,8 @@ function unsetup()
   if [ -L ~/.docker/config ]; then
     rm ~/.docker/config
   fi
+
+  #Todo: Make functions like add_if
 
   sed "${sed_flags_i[@]}" '/Include personal\.config/d' ~/.ssh/config
   sed "${sed_flags_i[@]}" '/Include openssh_8\.config/d' ~/.ssh/config

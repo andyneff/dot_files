@@ -1,6 +1,6 @@
-[submodule "external/dot"]
+[submodule "external/dot_core"]
 	path = external/dot_core
-	url = https://github.com/andyneff/dot.git
+	url = https://github.com/andyneff/dot_core.git
 [submodule "additional_dots/60_private_dot_files"]
 	path = additional_dots/60_private_dot_files
 	url = git@github.com:andyneff/dot_files_private.git

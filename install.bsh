@@ -6,11 +6,11 @@ export DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 
 # 1. Make sure dot is there
 pushd "${DOT_DIR}" &> /dev/null
-  if [[ $(git submodule status external/dot) =~ ^- ]]; then
+  if [[ $(git submodule status external/dot_core) =~ ^- ]]; then
     echo "Initializing dot repo..." >&2
-    git submodule update --recursive --init external/dot
+    git submodule update --recursive --init external/dot_core
   fi
 popd &> /dev/null
 
 # 2. Call the universal install script
-"${DOT_DIR}/external/dot/install.bsh" ${@+"${@}"}
+"${DOT_DIR}/external/dot_core/install.bsh" ${@+"${@}"}
