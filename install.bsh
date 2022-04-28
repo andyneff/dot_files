@@ -13,4 +13,4 @@ pushd "${DOT_DIR}" &> /dev/null
 popd &> /dev/null
 
 # 2. Call the universal install script
-"${DOT_DIR}/external/dot_core/install.bsh" ${@+"${@}"}
+"${DOT_DIR}/external/dot_core/install_common.bsh" ${@+"${@}"}
