@@ -689,6 +689,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 alias forcessh='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 alias ssh2="ssh -o ControlPath=none"
+alias sshki="ssh2 -o PreferredAuthentications=keyboard-interactive"
 alias scp2="scp -o ControlPath=none"
 alias ssh_check='ssh -O check'
 alias ssh_close='ssh -O exit'
