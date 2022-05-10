@@ -376,6 +376,21 @@ PROMPT_COMMAND='__ps1_rv=$?; __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
 unset hostcolor OS_PROMPT
 alias no_prompt='unset PROMPT_COMMAND; PS1="$ "'
 
+if [ "${BASH_VERSINFO[0]}" -ge "5" -a -n "${WSL_INTEROP+set}" ]; then
+  function _custom_initial_word_complete()
+  {
+    if [ "${2-}" != "" ]; then
+      if [ "${2::3}" == "wor" ]; then
+        COMPREPLY=($(compgen -c "${2}" | \grep -v workfolderssvc))
+      else
+        COMPREPLY=($(compgen -c "${2}"))
+      fi
+    fi
+  }
+
+  complete -I -F _custom_initial_word_complete
+fi
+
 function parent_find()
 {
   local OLDPWD
@@ -1218,3 +1233,4 @@ function ppcd()
 #   export TMUX_OWD="${PWD}"
 #   pushd .
 # fi
+
