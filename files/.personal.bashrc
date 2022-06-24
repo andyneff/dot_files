@@ -696,7 +696,7 @@ alias fix_sfm="xsetroot -cursor_name left_ptr"
 
 alias nvidia-smi2='while :; do nvidia-settings -q GPUUtilization; nvidia-smi; sleep 1; done'
 
-alias dc='docker-compose'
+alias scott="env HOME=~/.dot/other/scott LESSHISTFILE=/dev/null"
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert

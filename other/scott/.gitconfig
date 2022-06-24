@@ -1,0 +1,321 @@
+[alias]
+  # escaping a git alias is annoying. use these aliases to do it
+  # NOTE not every variable needs to be escaped, only those that could have spaces in them
+  # https://stackoverflow.com/a/39616600
+  quote-string = "!read -r l; printf \\\"!; printf %s \"$l\" | sed 's/\\([\\\"]\\)/\\\\\\1/g'; printf \" #\\\"\\n\" #"
+  quote-string-undo = "!read -r l; printf %s \"$l\" | sed 's/\\\\\\([\\\"]\\)/\\1/g'; printf \"\\n\" #"
+  debug = "!set -x; GIT_TRACE=2 GIT_CURL_VERBOSE=2 GIT_TRACE_PERFORMANCE=2 GIT_TRACE_PACK_ACCESS=2 GIT_TRACE_PACKET=2 GIT_TRACE_PACKFILE=2 GIT_TRACE_SETUP=2 GIT_TRACE_SHALLOW=2 git"
+
+  submodules = submodule foreach --quiet --recursive 'echo \"${toplevel}/${sm_path}\"'
+  undo = reset --soft HEAD~1
+  count = rev-list --count # SHA1..SHA2
+  # NOTE this lists ALL children, even those not reachable by the graph (i believe)
+  all-children = "!f() \
+      { : git log ; \
+        git rev-list --children $(git reflog --pretty=%H) | grep ^$(git rev-list -n 1 ${1-HEAD}) | cut -d' ' -f2-; \
+      }; f"
+  parents = log --pretty=%P -n 1 # of merge
+  newest-ancestor = merge-base # branch1 branch2
+  # from https://stackoverflow.com/q/1527234
+  oldest-ancestor = !bash -c 'diff --old-line-format='' --new-line-format='' \
+      <(git rev-list --first-parent ${1:-master}) \
+      <(git rev-list --first-parent ${2:-HEAD}) | head -1' -
+  # https://github.com/git-tips/tips
+  # see also, git describe
+  contains = "!f() \
+      { : git log ; \
+        echo \"-- branches --\" && \
+        git branch -a --contains \"${@}\" && \
+        echo \"-- tags --\" && \
+        git tag --sort="v:refname" --contains \"${@}\"; \
+      }; f"
+  # list refs that contain a commit
+  # https://stackoverflow.com/a/31158368
+  cherry-contains = "!f() \
+      { : git log ; \
+        local sha=$(git rev-parse --verify \"$1\") || return 1; \
+        local refs=${2:-refs/heads/} && \
+        local branch && \
+        git for-each-ref --format='%(refname:short)' $refs | while IFS= read -r branch; do \
+          if ! git cherry \"$branch\" \"$sha\" \"$sha^\" | grep -qE \"^\\+ $sha\"; then \
+            echo \"$branch\"; \
+          fi; \
+        done \
+      }; f"
+  branch-diff = "!sh -c 'git diff $(git oldest-ancestor)..'"
+  branch-hist = "!sh -c 'git hist $(git oldest-ancestor)..'"
+  #tags = log --tags --decorate --simplify-by-decoration --no-merges --oneline
+  tags = log --pretty=format:\"%C(yellow)%h %C(reset)%ad |%C(auto)%d %C(reset)%s\" --date=short --tags --simplify-by-decoration --no-merges
+  # git describe will show the previous tag that is reachable from a commit; git describe --contains
+  # will show the tag that comes after the commit. can also add the --all flag to show any ref
+  last-tag = describe --tags --abbrev=0
+  next-tag = describe --tags --abbrev=0 --contains
+  tag-type = cat-file -t
+  # cf. submodule-commit-sha, which uses git submodule--helper list to get the submodule's SHA
+  # cf. llhist
+  # NOTE ';', not '&&', before popd
+  submodule-hist = "! \
+      f() { \
+        pushd \"${GIT_PREFIX}\" &>/dev/null && \
+          git log --pretty=format:\"%C(yellow)%h %C(reset)%ad | %s%C(auto)%d %C(cyan)[%an]\" \
+                  --date=short --patch --color --submodule=log \"${@}\" | \
+          grep --color=never '^Submodule' -B1 | \
+          more -R; \
+        popd &>/dev/null; \
+      }; f"
+  # unfortunately, this only lists first parents (which, with some branching strategies, tend to be merge commits)
+  # https://github.com/git/git/blob/v2.24.1/diff.c#L3400 =>
+  # https://github.com/git/git/blob/v2.24.1/submodule.c#L613-L640
+  # https://github.com/git/git/blob/v2.24.1/submodule.c#L450
+  #
+  # see also: submodule-summary
+  # cf. llhist, which is the same command, just without the --graph flag
+  #submodule-lhist = "! \
+  #    f() { \
+  #      pushd \"${GIT_PREFIX}\" &>/dev/null && \
+  #        git log --pretty=format:\"%C(yellow)%h %C(reset)%ad | %s%C(auto)%d %C(cyan)[%an]\" \
+  #                --date=short --patch --color --submodule=log \"${@}\"; \
+  #      popd &>/dev/null; \
+  #    }; f"
+  #hist = log --pretty=format:\"%h %ad | %s%C(auto)%d [%an]\" --graph --date=short
+  # RE what I would really like is the ability to color the * in the log graph so I can tell when a branch ends
+  hist = log --pretty=format:\"%C(yellow)%h%C(reset) %ad | %s%C(auto)%d %C(cyan)[%an]%C(reset)\" --graph --date=short
+  # %m (mark) is really only useful when symmetrically logging two branches
+  hist-all = log --pretty=format:\"%C(yellow)%h:%S%C(reset) %ad %C(cyan)[%an]%C(auto)%d%n  %m %s\" --all --graph --date=short
+  #lhist = "!f() { pushd \"${GIT_PREFIX}\" &>/dev/null && git hist --stat \"${@}\"; popd &>/dev/null; }; f"
+  lhist =  "!sh -c ': git log ; cd \"${GIT_PREFIX:-.}\" && git hist --stat \"${@}\"'" -
+  llhist = "!sh -c ': git log ; cd \"${GIT_PREFIX:-.}\" && git hist --patch --submodule=log \"${@}\"'" -
+  # doesn't work very well with file histories
+  overview = !git hist --simplify-by-decoration
+  blame = log -L
+  pickax = log -S
+  #filelog = log --patch # show history of a file with diffs
+  logitall = "!f() { git log --graph --decorate --all $(git reflog show --format=%H) \"${@}\"; }; f"
+  # i'm not exactly sure why this isn't simply git branch -a --format='%(objectname)'; that sub-expression
+  # is saying: get all branches that are reachable from the root of the git history
+  # RE git branch --format='%(objectname)' needs git >=2.13.0
+  # RE also, it turns out, not all branches are reachable from the root of the git tree, e.g., gh-pages. still...
+  # git log --simplify-by-decoration alone does drop some refs for some reason if we don't include them
+  # on the cli (git symbolic-ref -q HEAD &> /dev/null || echo HEAD includes HEAD as a ref if on a detached
+  # head and the second half of that expression includes the other refs)
+  # must checkout the commit of interest (so that it is decorated (with HEAD))
+  #family-tree = !"git log --simplify-by-decoration --decorate --graph $(git branch --format='%(objectname)' --color=never -a --contains $(git rev-list --topo-order --max-parents=0 HEAD | tail -n1))"
+  family-tree = !"git log --simplify-by-decoration --decorate --graph $(git rev-parse $(git symbolic-ref -q HEAD &> /dev/null || echo HEAD && git for-each-ref --format='%(refname:short)' refs/heads refs/remotes))"
+  # print both incoming and outgoing changes (the symmetric difference) of a tracking branch
+  #unintegrated = "!sh -c 'git rev-list --left-right --boundary ${1-HEAD}@{upstream}...${HEAD}'"
+  # print incoming changes to a tracking branch
+  #incoming = "!sh -c 'git hist ${1-HEAD}..${1-HEAD}@{upstream}'" -
+  # REVIEW perhaps lincoming and llincoming would be better
+  incoming = "!f() \
+      { : git log ; \
+        local branch=HEAD && \
+        `# HACK simple argument parsing: branch must come first` && \
+        if [ $# -ge 1 ] && [[ $1 != --* ]]; then \
+          branch=${1} && \
+          shift; \
+        fi; \
+        git hist ${branch}..${branch}@{upstream} ${@+\"${@}\"}; \
+      }; f"
+  # print outgoing changes for a tracking branch
+  #outgoing = "!sh -c 'git hist ${1-HEAD}@{upstream}..${1-HEAD}'" -
+  outgoing = "!f() \
+      { : git log ; \
+        local branch=HEAD && \
+        `# HACK simple argument parsing: branch must come first` && \
+        if [ $# -ge 1 ] && [[ $1 != --* ]]; then \
+          branch=${1} && \
+          shift; \
+        fi; \
+        git hist ${branch}@{upstream}..${branch} ${@+\"${@}\"}; \
+      }; f"
+  # https://stackoverflow.com/a/3338774
+  unpushed = "!f() { git log ${1---branches} --not --remotes --decorate --graph; }; f"
+  wdiff = diff --word-diff
+  cdiff = diff --cached
+  vdiff = difftool
+  vmerge = mergetool
+  # diff of a commit to its parent
+  diff-rev = "!f() \
+      { : git diff ; \
+        pushd \"${GIT_PREFIX}\" &>/dev/null && \
+          local REV=$1 && \
+          shift && \
+          local PATHSPEC=\"${@}\" && \
+          git  diff $(git parents ${REV} -- \"${PATHSPEC}\")..${REV} -- \"${PATHSPEC}\"; \
+        popd &>/dev/null; \
+      }; f"
+  # difftool of a commit to its parent
+  vdiff-rev = "!f() \
+      { : git diff ; \
+        pushd \"${GIT_PREFIX}\" &>/dev/null && \
+          local REV=$1 && \
+          shift && \
+          local PATHSPEC=\"${@}\" && \
+          git vdiff $(git parents ${REV} -- \"${PATHSPEC}\")..${REV} -- \"${PATHSPEC}\"; \
+        popd &>/dev/null; \
+      }; f"
+  # test if the argument is a file and ask if you are sure
+  # per https://github.com/git/git/blob/master/contrib/completion/git-completion.bash
+  # "!f()" pattern matters
+  co = "!f() \
+      { : git checkout ; \
+        pushd \"${GIT_PREFIX}\" &>/dev/null && \
+          local arg && \
+          local files=() && \
+          for arg in ${@+\"${@}\"}; do \
+            if [ -e \"${arg}\" ]; then \
+              if [ -d \"${arg}\" ]; then \
+                arg="${arg%/}/"; \
+              fi; \
+              files+=(\"${arg}\"); \
+            fi \
+          done && \
+          if [ ${#files[@]} -eq 0 ]; then \
+            git checkout \"${@}\"; \
+            local rv=$?; \
+          else \
+            local ans && \
+            echo \"Are you sure you want to checkout these files/directories\" && \
+            printf '  %s\n' \"${files[@]}\" && \
+            read -r -p \"Proceed (y/n)? \" ans && \
+            if [ \"${ans-set}\" = y ]; then \
+              git checkout \"${@}\"; \
+              local rv=$?; \
+            else \
+              echo Aborting; \
+              local rv=1; \
+            fi; \
+          fi; \
+        popd &>/dev/null; \
+        return ${rv}; \
+      }; f"
+  amend = commit --amend --no-edit
+  edit = commit --amend
+  # from https://stackoverflow.com/a/23172256
+  # NOTE this doesn't work exactly like the answer suggests; the first line seems to be finding the SHA of origin/HEAD,
+  # which I dont think is what it wants to do, and does not always exist
+  # RE the suggestion in the comment seems to work
+  # checkout next (newer) commit
+  next = "! \
+      f() { \
+        `#local branch=$(git show-ref | grep $(git show-ref -s -- HEAD) | sed 's|.*/\\(.*\\)|\\1|' | grep -v HEAD | sort | uniq)` && \
+        local branch=$(git branch --contains HEAD | grep -v HEAD | sort | uniq) && \
+        local hash=$(git rev-parse ${branch}) && \
+        local next=$(git rev-list --topo-order HEAD..${hash} | tail -1) && \
+        git checkout ${next}; \
+      }; f"
+  # from https://stackoverflow.com/a/23172256
+  # checkout prev (older) revision
+  prev = checkout HEAD~
+  # cf. git submodule summary, which does not show modified/staged content, whereas git diff --submodule=log does
+  # RE the implementation for git submodule summary [1] and git diff --submodule=log [2] are not the same
+  # [1] https://github.com/git/git/blob/v2.24.1/git-submodule.sh#L777
+  # [2] https://github.com/git/git/blob/v2.24.1/diff.c#L3400 =>
+  #     https://github.com/git/git/blob/v2.24.1/submodule.c#L613
+  #     https://github.com/git/git/blob/v2.24.1/submodule.c#L554-L563
+  # see also: submodule-lhist (and llhist)
+  submodule-summary = "! \
+      f() { \
+        pushd \"${GIT_PREFIX:-.}\" &>/dev/null && \
+          local arg && \
+          local grep_args=() && \
+          for arg in \"${@:-.+}\"; do \
+            `# Strip trailing /` && \
+            grep_args+=('-E' ^\"${arg%/}\"$); \
+          done && \
+          local IFS=$'\n' && \
+          for sm_path in $(git submodule foreach --quiet 'echo \"${displaypath}\"' | grep \"${grep_args[@]}\"); do \
+            git diff --submodule=log \"${sm_path}\"; \
+          done; \
+        popd &>/dev/null; \
+      }; f"
+  ss = "!sh -c 'git submodule-summary ${@+\"${@}\"}'" -
+  #st = "!f() { pushd \"${GIT_PREFIX:-.}\" &>/dev/null && git status -sb && popd &>/dev/null && git submodule-summary; }; f"
+  # grep'ing colors is hard
+  #git -c color.status=always sb | grep $' \e\[31m.'
+  #git submodule foreach --quiet 'echo "\$'"'"' \e\[31m.\e\[m \"\\\\\?${displaypath}'"'"'_"' # REMOVE the _!
+  #
+  # This doesn't quite work on linux; it seems that each path in paths (which get
+  # turned into grep_args), needs a $'', but I'm not sure that gets fowarded through
+  # the variables
+  # git -c color.status=always sb | grep $' \e\[31m.\e\[m' matchs a modified submodule
+  st = "! \
+      f() { \
+        pushd \"${GIT_PREFIX:-.}\" &>/dev/null && \
+          local OLD_IFS=\"${IFS}\" && \
+          IFS=$'\n' && \
+          `# Doesn't work because '-e ${displaypath}' is one element. I'm also` && \
+          `# not sure why echo doesn't eat the -e` && \
+          `#local grep_args=($(git submodule foreach --quiet 'echo -e \\\"\"${displaypath}\"\\\"'))` && \
+          `# Filter all submodules` && \
+          `#local paths=($(git submodule foreach --quiet 'echo \"${displaypath}\"'))` && \
+          `# Only filter the unstaged submodules` && \
+          `# for whatever reason, git resets the color with [m instead of [0m` && \
+          local paths=($(git submodule foreach --quiet \
+              'echo \" \\e\\[31m.\\e\\[m \\\"\\?${displaypath}\\\"\\?\"')) && \
+          IFS=\"${OLD_IFS}\" && \
+          if [ ${#paths[@]} -eq 0 ]; then \
+            git -c color.status=always sb ${@+\"${@}\"}; \
+          else \
+            local grep_args=() && \
+            local path && \
+            for path in \"${paths[@]}\"; do \
+              grep_args+=('-e' \"${path}\"); \
+            done && \
+            git -c color.status=always sb ${@+\"${@}\"} | grep -v \"${grep_args[@]}\"; \
+          fi; \
+        popd &>/dev/null && \
+        git submodule-summary ${@+\"${@}\"}; \
+      }; f"
+  sb = status -sb
+  mv-branch = branch -f # branch SHA
+  irebase = rebase --interactive --rebase-merges --autostash --autosquash
+  sstatus = "!git-sorted-status"
+  drop = branch -d
+  discard = checkout --
+  # https://stackoverflow.com/a/44824475
+  # RE doesn't always work
+  #stash-staged = "!sh -c 'git stash --keep-index; git stash push -m \"staged\" --keep-index; git stash pop stash@{1}'"
+  #unstash = stash pop
+  unindex = stash pop
+  unstage = reset HEAD
+  remotes = remote -v
+  branches = branch -a
+  refs = for-each-ref --format='%(refname)'
+  stashes = stash list
+  # blog.filippo.io/git-fixup-amending-an-older-commit/
+  fixup = "!f() \
+    { : git commit ; \
+      local TARGET=$(git rev-parse \"$1\") && \
+      git commit --fixup=${TARGET} \"${@:2}\" && \
+      EDITOR=true git rebase -i --autostash --autosquash ${TARGET}^ || git reset --soft HEAD~1; \
+    }; f"
+  hide = update-index --assume-unchanged
+  unhide = update-index --no-assume-unchanged
+  unhideall = !git ls-hidden | xargs git update-index --no-assume-unchanged
+  ls-hidden = !git ls-files -v | grep ^h | cut -c 3-
+[diff]
+  algorithm = histogram
+  tool = meld
+  submodule = log
+[difftool]
+  prompt = false
+[merge]
+  tool = kdiff3
+  renamelimit=15000
+[mergetool]
+  prompt = false
+[status]
+  submoduleSummary = true
+[color]
+  branch = auto
+[color "diff"]
+  meta = magenta bold
+  frag = yellow bold
+  old = red bold
+  new = cyan bold
+[log]
+  follow = true
+[rerere]
+  enabled = true
+
