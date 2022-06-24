@@ -48,6 +48,10 @@ fi'
   if meet_requirements "$(git_version)" '>=2.11.4'; then
     add_after_if ~/.gitconfig "[include]" "  path = ~/.2.11.4.gitconfig"
   fi
+  
+  if meet_requirements "$(git_version)" '>=2.15'; then
+    add_after_if ~/.gitconfig "[include]" "  path = ~/.2.15.gitconfig"
+  fi
 
   if [ "${OS-}" = "Windows_NT" ]; then
     add_after_if ~/.gitconfig "[include]" "  path = ~/.windows.gitconfig"
