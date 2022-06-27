@@ -3,6 +3,7 @@
 has_panfs=0
 mount | grep -q "type panfs " && has_panfs=1
 
+# Something to do with panfs and __git_ps1
 if [ "${BASH_VERSINFO[0]}" -ge "4" ]; then
   backup_aliases[git]="$(alias git 2> /dev/null || :)"
 else
@@ -17,6 +18,10 @@ case $- in
     *i*) ;;
       *) return;;
 esac
+
+###########################
+### Env var and options ###
+###########################
 
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
@@ -53,24 +58,6 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# To discover bind key codes:
-# bind -p | grep quote
-# "\C-q": quoted-insert  # Ctrl+q, doesn't always work (e.g. cygwin)
-# "\C-v": quoted-insert  # Ctrl+v, doesn't work on Windows Terminal, but does work in Command prompt
-# "\e[2~": quoted-insert # Works in Windows Terminal!
-
-# ^[[H - "^[" is "\e" (Alt), so "\e[H"
-# ^? - "^" is "\C-" (Ctrl), so "\C-?"
-
-# ?+Left/Right
-bind '"\e[5C": forward-word'
-bind '"\e[5D": backward-word'
-# Ctrl+Left/Right
-bind '"\e[1;5C": forward-word'
-bind '"\e[1;5D": backward-word'
-# bind '"\e[1~": beginning-of-line' # Home
-# bind '"\e[4~": end-of-line'       # End
-
 function add_element_post ()
 {
   target=$1
@@ -88,79 +75,6 @@ function add_element_post ()
   if [ $needToAdd == 1 ]; then
     t=( ${t[@]} $2 )
     export $target="${t[*]}"
-  fi
-}
-
-function ptop(){
-  local PGREP_ARG=$1
-  shift
-  top -p$(pgrep $PGREP_ARG | tr '\n' , | sed 's/,$//') "${@}"
-}
-
-# This determines if you are using a file in  order to decide if you
-# should recursively grep or not. This logic is not perfect. It does not appear
-# to detect --file, -f[filename], -f=filename, but will detect -f filename
-function grep_fun() {
-  local orig=("${@}")
-  declare -i stdin=0
-
-  declare -i pattern=0
-  declare -i files=0
-
-  while [[ ${#} > 0 ]]; do
-    # Anything after -- is automatically a file
-    if [ "${files}" = 1 ]; then
-      files=2
-    fi
-
-    # Patterns that are expressions and take an extra arg
-    if [[ $1 =~ ^-[a-eg-zA-Z]*f$|^-[a-df-zA-Z]*e$ ||
-          $1 = --file ||
-          $1 = --regexp ]]; then
-      shift
-      pattern=1
-    # Same, arg included
-    elif [[ $1 =~ ^-[a-eg-zA-Z]*f|^-[a-df-zA-Z]*e ||
-            $1 = --file=* ||
-            $1 = --regexp=* ]]; then
-      pattern=1
-    # Everything that takes an arg
-    elif [[ $1 =~ ^-[a-ln-zA-Z]*m|^-[a-zB-Z]*A|^-[a-zAC-Z]*B|^-[a-zABD-Z]*C|^-[a-zA-CE-Z]*D|^-[a-ce-zA-Z]*d ||
-            $1 = --max-count ||
-            $1 = --after-context ||
-            $1 = --before-context ||
-            $1 = --context ||
-            $1 = --devices ||
-            $1 = --directories ||
-            $1 = --color ||
-            $1 = --label ||
-            $1 = --exclude ||
-            $1 = --exclude-from ||
-            $1 = --exclude-dir ||
-            $1 = --include ||
-            $1 = --group-separator ||
-            $1 = --binary-files ]]; then
-      shift
-    # Special case
-    elif [ "$1" = "--" ]; then
-      files+=1
-    # Anything else not starting with - is a pattern/file
-    elif [[ $1 != -* ]]; then
-      # If pattern already specified, it's a file
-      if [ "${pattern}" = "1" ]; then
-        files=2
-      else # else it WAS a pattern!
-        pattern=1
-      fi
-    fi
-
-    shift
-  done
-
-  if (( files + pattern < 3 )); then
-    \grep -in --color=always ${orig[@]+"${orig[@]}"} -
-  else
-    \grep -rin --color=always ${orig[@]+"${orig[@]}"}
   fi
 }
 
@@ -193,87 +107,6 @@ if [ "${X_WORKING}" = "1" ]; then
   fi
 fi
 
-function dc_images_parent_id(){
-  /opt/venvs/docker/bin/python -c "from __future__ import print_function; import docker; c=docker.client.from_env();imgs=c.images.list(all=True);ids=[(i.attrs['ParentId'], i.id) for i in imgs]; [print('{} {}'.format(i[0].replace('sha256:', ''), i[1].replace('sha256:', ''))) for i in ids]"
-}
-
-function dc_children(){
-  dc_children_q $1 " "
-}
-
-function dc_children_q(){
-  if [ "$2" != "" ]; then
-    local depth=-$2
-  fi
-  local cache=$3
-  if [ "$cache" == "" ]; then
-    local cache_use=`mktemp`
-    dc_images_parent_id > "${cache_use}"
-    local dockid=$(docker inspect -f '{{.Id}}' $1 | sed 's|sha256:||')
-  else
-    local cache_use="${cache}"
-    local dockid=$1
-  fi
-
-  if (( ${#dockid} < 64 )); then return; fi
-
-  while read line; do
-    local newid=`echo $line | awk '{print $2}'`
-    echo ${depth}${newid}
-    dc_children_q "${newid}" "${depth}" "${cache_use}"
-  done < <(grep "^${dockid}" "${cache_use}")
-
-  if [ "${cache}" == "" ]; then
-    \rm "${cache_use}"
-  fi
-}
-
-# Find out which docker is responsible for host pid
-function dc_pid(){
-  local ds=($(docker ps --format '{{.ID}}' | xargs docker inspect -f '{{.State.Pid}} {{.Id}}'))
-  local ppid=$1
-  while (( ${ppid} != 1 )); do
-    for x in $(seq 0 2 ${#ds[@]}); do
-      if [ "${ds[$x]}" == "${ppid}" ]; then
-        echo ${ds[$(($x+1))]}
-        return
-      fi
-    done
-    ppid=$(ps -ho ppid $ppid)
-  done
-}
-
-# List all containers (running and not-running) that are bound to a particular
-# volume (from docker volume ls). This is useful for trying to remove a volume,
-# but a stray container has it mounted
-function dc_find_volume()
-{
-  local volumes=($(docker inspect --format '{{$x:=.Name}} {{range .Mounts}} {{if .Name}} {{$x}}@{{ .Name }} {{end}} {{end}}' $(docker ps -aq)))
-  local x
-  for x in "${volumes[@]}"; do
-    if [[ ${x} =~ .*@$1 ]]; then
-      echo ${x%@*}
-    fi
-  done
-}
-
-function dc_volume()
-{
-  docker volume rm $(docker volume ls | \grep -E '^local +[a-f0-9]{64}$' | awk '{print $2}')
-}
-
-# Removes an image and all its children. Will probably fail if containers are
-# left behind using any of the images.
-function dc_rmi(){
-  docker rmi $(dc_children_q $1 | tac)
-  docker rmi $1
-}
-
-function docker_list-tags()
-{
-  curl -sL "https://hub.docker.com/v1/repositories/${1}/tags" | jq -r '.[].name'
-}
-
 add_element_post PATH ~/bin
 #add_element_post PATH /opt/projects/just/vsi_common/linux
 #add_element_pre PYTHONPATH /home/andy/tools/
@@ -283,6 +116,32 @@ export PYTHONSTARTUP=~/.pyrc
 #export PS1='\[\e[40;93m\]\w\[\e[0m\]\n[\u@\h \W]$ '
 
 export GPG_TTY="$(tty)"
+
+################
+### Bindings ###
+################
+
+# To discover bind key codes:
+# bind -p | grep quote
+# "\C-q": quoted-insert  # Ctrl+q, doesn't always work (e.g. cygwin)
+# "\C-v": quoted-insert  # Ctrl+v, doesn't work on Windows Terminal, but does work in Command prompt
+# "\e[2~": quoted-insert # Works in Windows Terminal!
+
+# ^[[H - "^[" is "\e" (Alt), so "\e[H"
+# ^? - "^" is "\C-" (Ctrl), so "\C-?"
+
+# ?+Left/Right
+bind '"\e[5C": forward-word'
+bind '"\e[5D": backward-word'
+# Ctrl+Left/Right
+bind '"\e[1;5C": forward-word'
+bind '"\e[1;5D": backward-word'
+# bind '"\e[1~": beginning-of-line' # Home
+# bind '"\e[4~": end-of-line'       # End
+
+#################
+### My Prompt ###
+#################
 
 source ~/.git-prompt
 #PS1='\[\e[40;93m\]\w\[\e[0m\]\n[\u@\h \W]$ '
@@ -376,21 +235,6 @@ PROMPT_COMMAND='__ps1_rv=$?; __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
 unset hostcolor OS_PROMPT
 alias no_prompt='unset PROMPT_COMMAND; PS1="$ "'
 
-if [ "${BASH_VERSINFO[0]}" -ge "5" -a -n "${WSL_INTEROP+set}" ]; then
-  function _custom_initial_word_complete()
-  {
-    if [ "${2-}" != "" ]; then
-      if [ "${2::3}" == "wor" ]; then
-        COMPREPLY=($(compgen -c "${2}" | \grep -v workfolderssvc))
-      else
-        COMPREPLY=($(compgen -c "${2}"))
-      fi
-    fi
-  }
-
-  complete -I -F _custom_initial_word_complete
-fi
-
 function parent_find()
 {
   local OLDPWD
@@ -447,6 +291,122 @@ fi
 VIRTUAL_ENV_DISABLE_PROMPT=1
 
 #gnome-terminal --save-config ~/.gnome-termainl-session
+
+#############################
+### Host Specific Section ###
+#############################
+
+# WSL
+if [ "${BASH_VERSINFO[0]}" -ge "5" -a -n "${WSL_INTEROP+set}" ]; then
+  function _custom_initial_word_complete()
+  {
+    if [ "${2-}" != "" ]; then
+      if [ "${2::3}" == "wor" ]; then
+        COMPREPLY=($(compgen -c "${2}" | \grep -v workfolderssvc))
+      else
+        COMPREPLY=($(compgen -c "${2}"))
+      fi
+    fi
+  }
+
+  complete -I -F _custom_initial_word_complete
+fi
+
+
+
+
+
+
+
+
+
+
+#############################
+### Functions and Aliases ###
+#############################
+
+## Docker ##
+
+function dc_images_parent_id(){
+  /opt/venvs/docker/bin/python -c "from __future__ import print_function; import docker; c=docker.client.from_env();imgs=c.images.list(all=True);ids=[(i.attrs['ParentId'], i.id) for i in imgs]; [print('{} {}'.format(i[0].replace('sha256:', ''), i[1].replace('sha256:', ''))) for i in ids]"
+}
+
+function dc_children(){
+  dc_children_q $1 " "
+}
+
+function dc_children_q(){
+  if [ "$2" != "" ]; then
+    local depth=-$2
+  fi
+  local cache=$3
+  if [ "$cache" == "" ]; then
+    local cache_use=`mktemp`
+    dc_images_parent_id > "${cache_use}"
+    local dockid=$(docker inspect -f '{{.Id}}' $1 | sed 's|sha256:||')
+  else
+    local cache_use="${cache}"
+    local dockid=$1
+  fi
+
+  if (( ${#dockid} < 64 )); then return; fi
+
+  while read line; do
+    local newid=`echo $line | awk '{print $2}'`
+    echo ${depth}${newid}
+    dc_children_q "${newid}" "${depth}" "${cache_use}"
+  done < <(grep "^${dockid}" "${cache_use}")
+
+  if [ "${cache}" == "" ]; then
+    \rm "${cache_use}"
+  fi
+}
+
+# Find out which docker is responsible for host pid
+function dc_pid(){
+  local ds=($(docker ps --format '{{.ID}}' | xargs docker inspect -f '{{.State.Pid}} {{.Id}}'))
+  local ppid=$1
+  while (( ${ppid} != 1 )); do
+    for x in $(seq 0 2 ${#ds[@]}); do
+      if [ "${ds[$x]}" == "${ppid}" ]; then
+        echo ${ds[$(($x+1))]}
+        return
+      fi
+    done
+    ppid=$(ps -ho ppid $ppid)
+  done
+}
+
+# List all containers (running and not-running) that are bound to a particular
+# volume (from docker volume ls). This is useful for trying to remove a volume,
+# but a stray container has it mounted
+function dc_find_volume()
+{
+  local volumes=($(docker inspect --format '{{$x:=.Name}} {{range .Mounts}} {{if .Name}} {{$x}}@{{ .Name }} {{end}} {{end}}' $(docker ps -aq)))
+  local x
+  for x in "${volumes[@]}"; do
+    if [[ ${x} =~ .*@$1 ]]; then
+      echo ${x%@*}
+    fi
+  done
+}
+
+function dc_volume()
+{
+  docker volume rm $(docker volume ls | \grep -E '^local +[a-f0-9]{64}$' | awk '{print $2}')
+}
+
+# Removes an image and all its children. Will probably fail if containers are
+# left behind using any of the images.
+function dc_rmi(){
+  docker rmi $(dc_children_q $1 | tac)
+  docker rmi $1
+}
+
+function docker_list-tags()
+{
+  curl -sL "https://hub.docker.com/v1/repositories/${1}/tags" | jq -r '.[].name'
+}
 
 function _de_cleanup()
 {
@@ -667,40 +627,7 @@ function dcpfv2()
 
 alias dc_images_list='docker images -a -q | uniq'
 
-if [[ ! ${OSTYPE} =~ darwin.* ]]; then
-  alias ls='ls --color=auto'
-  alias lsd='ls --color=auto */ -lasd'
-else
-  alias ls='ls -G'
-  alias lsd='ls -G */ -lasd'
-fi
-#alias grep="grep -rin --color=always"
-alias grep="grep_fun"
-
-# alias myeclipse="env GIT_SSH=/usr/bin/ssh /opt/software/eclipse/luna/eclipse"
-alias rm="rm -i"
-alias pro="pushd /opt/projects/"
-# alias vip="/opt/projects/vip/wrap"
-
-#alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
-
-alias notebook="cd ~/notebook; pipenv run jupyter-notebook"
-alias lab="cd ~/notebook; pipenv run jupyter-lab"
-
-alias clear_cache='sudo sh -c "sync && echo 3 > /proc/sys/vm/drop_caches"'
-alias clear_swap='sudo sh -c "swapoff -a; swapon -a"'
-
-alias stray_pyc="find . -name \*.pyc -exec bash -c 'x={}; if [ ! -f \${x:0:\${#x}-1} ]; then echo \$x; fi' \;"
-
-alias fix_sfm="xsetroot -cursor_name left_ptr"
-
-alias nvidia-smi2='while :; do nvidia-settings -q GPUUtilization; nvidia-smi; sleep 1; done'
-
-alias scott="env HOME=~/.dot/other/scott LESSHISTFILE=/dev/null"
-
-# Add an "alert" alias for long running commands.  Use like so:
-#   sleep 10; alert
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+## SSH ##
 
 alias forcessh='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 alias ssh2="ssh -o ControlPath=none"
@@ -727,6 +654,14 @@ function ssh_close_all()
     xargs -0 -n1 -I controlpath bash -c "ssh -O exit -S controlpath foobar || rm controlpath"
 }
 
+## Process ##
+
+function ptop(){
+  local PGREP_ARG=$1
+  shift
+  top -p$(pgrep $PGREP_ARG | tr '\n' , | sed 's/,$//') "${@}"
+}
+
 # NAME
 #   ppgrep - Pgrep that returns the parent ids instead
 # BUGS
@@ -744,112 +679,89 @@ function pps()
   ps -f $(pgrep "${@}")
 }
 
-# NAME
-#   autojust - Auto source your just setup file, and start using just
-function just()
-{
-  if [[ $(type -at just) == *file* ]]; then
-    unset just
-    command just ${@+"${@}"}
-  elif [ -e setup.env ]; then
-    . setup.env
-    unset just
-    just ${@+"${@}"}
-  elif [ "${PWD}" != "/" ]; then
-    pushd .. >& /dev/null
-    just ${@+"${@}"}
-    popd >& /dev/null
-  else
-    command just ${@+"${@}"}
-  fi
-}
+## Core ##
 
-function git()
-{
-  if (( $# > 0 )) && [ "${1}" == "commit" ]; then
-    command git ${@+"${@}"} -s
-  else
-    command git ${@+"${@}"}
-  fi
-}
-
-function ruler()
-{
-  local cols="$(tput cols)"
-  if [ -z "${cols}" ]; then
-    cols=80
-  fi
-  local tens=$((cols / 10))
-  local i
-  for (( i=1 ; i <= tens ; i++ )); do
-    printf "% 9d|" $((i * 10))
-  done
-  printf '\n'
-}
-
-function auto_agent()
-{
-  # Source file if this has been run before
-  if [ -f ~/.ssh/ssh-agent ]; then
-    source ~/.ssh/ssh-agent > /dev/null
-  fi
-
-  # See if the agent is still running, maybe rebooted
-  kill -0 $SSH_AGENT_PID >& /dev/null
-
-  # If not running
-  if [ "$?" != "0" ]; then
-    # Cleanup
-    rm -f ~/.ssh/ssh-agent_pipe >& /dev/null
-    # Run again, using a socket in my home dir, storing the env vars in root of
-    # home dir
-    ssh-agent -a ~/.ssh/ssh-agent_pipe > ~/.ssh/ssh-agent
-
-    source ~/.ssh/ssh-agent
-
-    # Auto kill after a week of not being used
-    function watch_ssh_agent()
-    {
-      # Do one touch just to cover corner conditions
-      touch ~/.last_ran_command
-      # Store the last bash pid running this function
-      echo $$ > ~/.ssh/.watch_ssh.pid
-      while kill -0 "${SSH_AGENT_PID}" && (( $(date '+%s') - $(date -r ~/.last_ran_command '+%s') < 1*3600*24 )); do
-        # In case this function get called multiple time, last one wins, only need one
-        if [ "$(cat ~/.ssh/.watch_ssh.pid)" != "$$" ]; then
-          return
-        fi
-
-        sleep 60
-      done
-      kill ${SSH_AGENT_PID}
-    }
-    export -f watch_ssh_agent
-
-    if command -v screen &> /dev/null; then
-      screen -d -m -S auto_kill_ssh_agent bash -c watch_ssh_agent
-    elif [ "${OS-}" = "Windows_NT" ]; then
-      # https://superuser.com/a/1657415/352118
-      if command -v mintty &> /dev/null; then
-        mintty bash -mc '(watch_ssh_agent) &> /dev/null < /dev/null &'
-      # elif command -v cygstart &> /dev/null; then
-      else
-        echo "Woops, fixme"
-      fi
-    else
-      watch_ssh_agent &
-    fi
-    unset watch_ssh_agent
-  fi
-}
-
-if [ -e ~/.ssh/auto_agent ]; then
-  auto_agent
+if [[ ! ${OSTYPE} =~ darwin.* ]]; then
+  alias ls='ls --color=auto'
+  alias lsd='ls --color=auto */ -lasd'
 else
-  if [ -f ~/.ssh/ssh-agent ]; then
-    source ~/.ssh/ssh-agent > /dev/null
-  fi
+  alias ls='ls -G'
+  alias lsd='ls -G */ -lasd'
 fi
+
+# This determines if you are using a file in  order to decide if you
+# should recursively grep or not. This logic is not perfect. It does not appear
+# to detect --file, -f[filename], -f=filename, but will detect -f filename
+function grep_fun() {
+  local orig=("${@}")
+  declare -i stdin=0
+
+  declare -i pattern=0
+  declare -i files=0
+
+  while [[ ${#} > 0 ]]; do
+    # Anything after -- is automatically a file
+    if [ "${files}" = 1 ]; then
+      files=2
+    fi
+
+    # Patterns that are expressions and take an extra arg
+    if [[ $1 =~ ^-[a-eg-zA-Z]*f$|^-[a-df-zA-Z]*e$ ||
+          $1 = --file ||
+          $1 = --regexp ]]; then
+      shift
+      pattern=1
+    # Same, arg included
+    elif [[ $1 =~ ^-[a-eg-zA-Z]*f|^-[a-df-zA-Z]*e ||
+            $1 = --file=* ||
+            $1 = --regexp=* ]]; then
+      pattern=1
+    # Everything that takes an arg
+    elif [[ $1 =~ ^-[a-ln-zA-Z]*m|^-[a-zB-Z]*A|^-[a-zAC-Z]*B|^-[a-zABD-Z]*C|^-[a-zA-CE-Z]*D|^-[a-ce-zA-Z]*d ||
+            $1 = --max-count ||
+            $1 = --after-context ||
+            $1 = --before-context ||
+            $1 = --context ||
+            $1 = --devices ||
+            $1 = --directories ||
+            $1 = --color ||
+            $1 = --label ||
+            $1 = --exclude ||
+            $1 = --exclude-from ||
+            $1 = --exclude-dir ||
+            $1 = --include ||
+            $1 = --group-separator ||
+            $1 = --binary-files ]]; then
+      shift
+    # Special case
+    elif [ "$1" = "--" ]; then
+      files+=1
+    # Anything else not starting with - is a pattern/file
+    elif [[ $1 != -* ]]; then
+      # If pattern already specified, it's a file
+      if [ "${pattern}" = "1" ]; then
+        files=2
+      else # else it WAS a pattern!
+        pattern=1
+      fi
+    fi
+
+    shift
+  done
+
+  if (( files + pattern < 3 )); then
+    \grep -in --color=always ${orig[@]+"${orig[@]}"} -
+  else
+    \grep -rin --color=always ${orig[@]+"${orig[@]}"}
+  fi
+}
+#alias grep="grep -rin --color=always"
+alias grep="grep_fun"
+
+# alias myeclipse="env GIT_SSH=/usr/bin/ssh /opt/software/eclipse/luna/eclipse"
+alias rm="rm -i"
+
+## Custer ##
 
 function onyx_node_info()
 {
@@ -1054,6 +966,138 @@ function queue_status()
   rm -f "${pipe}"
 }
 
+## Other ##
+
+alias pro="pushd /opt/projects/"
+# alias vip="/opt/projects/vip/wrap"
+
+#alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
+
+alias notebook="cd ~/notebook; pipenv run jupyter-notebook"
+alias lab="cd ~/notebook; pipenv run jupyter-lab"
+
+alias clear_cache='sudo sh -c "sync && echo 3 > /proc/sys/vm/drop_caches"'
+alias clear_swap='sudo sh -c "swapoff -a; swapon -a"'
+
+alias stray_pyc="find . -name \*.pyc -exec bash -c 'x={}; if [ ! -f \${x:0:\${#x}-1} ]; then echo \$x; fi' \;"
+
+alias fix_sfm="xsetroot -cursor_name left_ptr"
+
+alias nvidia-smi2='while :; do nvidia-settings -q GPUUtilization; nvidia-smi; sleep 1; done'
+
+alias scott="env HOME=~/.dot/other/scott LESSHISTFILE=/dev/null"
+
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+# NAME
+#   autojust - Auto source your just setup file, and start using just
+function just()
+{
+  if [[ $(type -at just) == *file* ]]; then
+    unset just
+    command just ${@+"${@}"}
+  elif [ -e setup.env ]; then
+    . setup.env
+    unset just
+    just ${@+"${@}"}
+  elif [ "${PWD}" != "/" ]; then
+    pushd .. >& /dev/null
+    just ${@+"${@}"}
+    popd >& /dev/null
+  else
+    command just ${@+"${@}"}
+  fi
+}
+
+function git()
+{
+  if (( $# > 0 )) && [ "${1}" == "commit" ]; then
+    command git ${@+"${@}"} -s
+  else
+    command git ${@+"${@}"}
+  fi
+}
+
+function ruler()
+{
+  local cols="$(tput cols)"
+  if [ -z "${cols}" ]; then
+    cols=80
+  fi
+  local tens=$((cols / 10))
+  local i
+  for (( i=1 ; i <= tens ; i++ )); do
+    printf "% 9d|" $((i * 10))
+  done
+  printf '\n'
+}
+
+function auto_agent()
+{
+  # Source file if this has been run before
+  if [ -f ~/.ssh/ssh-agent ]; then
+    source ~/.ssh/ssh-agent > /dev/null
+  fi
+
+  # See if the agent is still running, maybe rebooted
+  kill -0 $SSH_AGENT_PID >& /dev/null
+
+  # If not running
+  if [ "$?" != "0" ]; then
+    # Cleanup
+    rm -f ~/.ssh/ssh-agent_pipe >& /dev/null
+    # Run again, using a socket in my home dir, storing the env vars in root of
+    # home dir
+    ssh-agent -a ~/.ssh/ssh-agent_pipe > ~/.ssh/ssh-agent
+
+    source ~/.ssh/ssh-agent
+
+    # Auto kill after a week of not being used
+    function watch_ssh_agent()
+    {
+      # Do one touch just to cover corner conditions
+      touch ~/.last_ran_command
+      # Store the last bash pid running this function
+      echo $$ > ~/.ssh/.watch_ssh.pid
+      while kill -0 "${SSH_AGENT_PID}" && (( $(date '+%s') - $(date -r ~/.last_ran_command '+%s') < 1*3600*24 )); do
+        # In case this function get called multiple time, last one wins, only need one
+        if [ "$(cat ~/.ssh/.watch_ssh.pid)" != "$$" ]; then
+          return
+        fi
+
+        sleep 60
+      done
+      kill ${SSH_AGENT_PID}
+    }
+    export -f watch_ssh_agent
+
+    if command -v screen &> /dev/null; then
+      screen -d -m -S auto_kill_ssh_agent bash -c watch_ssh_agent
+    elif [ "${OS-}" = "Windows_NT" ]; then
+      # https://superuser.com/a/1657415/352118
+      if command -v mintty &> /dev/null; then
+        mintty bash -mc '(watch_ssh_agent) &> /dev/null < /dev/null &'
+      # elif command -v cygstart &> /dev/null; then
+      else
+        echo "Woops, fixme"
+      fi
+    else
+      watch_ssh_agent &
+    fi
+    unset watch_ssh_agent
+  fi
+}
+
+if [ -e ~/.ssh/auto_agent ]; then
+  auto_agent
+else
+  if [ -f ~/.ssh/ssh-agent ]; then
+    source ~/.ssh/ssh-agent > /dev/null
+  fi
+fi
+
 # Parses "rows cols" for a specific tty
 # Args: [$1] - TTY to check, e.g. /dev/pts/1
 #       Default is to use current tty
@@ -1185,6 +1229,10 @@ function x_forward_to_file()
 {
   socat "UNIX-LISTEN:/tmp/.X11-unix/X${2},fork" "TCP:localhost:$((6000+${1}))"
 }
+
+####################
+### Experimental ###
+####################
 
 # function reservegpu()
 # {
