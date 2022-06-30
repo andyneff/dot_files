@@ -134,7 +134,7 @@
 	helper = cache --timeout=3600
 [core]
 	editor = ~/bin/git_edit
-        excludesFile = ~/.gitignore
+  excludesFile = ~/.gitignore
 [diff]
 	tool = meld
 # [status]
