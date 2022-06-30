@@ -48,7 +48,7 @@ fi'
   if meet_requirements "$(git_version)" '>=2.11.4'; then
     add_after_if ~/.gitconfig "[include]" "  path = ~/.2.11.4.gitconfig"
   fi
-  
+
   if meet_requirements "$(git_version)" '>=2.15'; then
     add_after_if ~/.gitconfig "[include]" "  path = ~/.2.15.gitconfig"
   fi
@@ -70,7 +70,7 @@ fi'
 
   # Other
 
-  if [ "${DOT_OS-}" = "linux" ] && [ ! -e ~/bin/docker-credential-secretservice ] && [ ! -e ~/bin/docker-credential-pass ]; then
+  if [ "${DOT_OS-}" = "linux" ] && [ -z "${WSLENV+set}" ] && [ ! -e ~/bin/docker-credential-secretservice ] && [ ! -e ~/bin/docker-credential-pass ]; then
     # Run level 3 is headless, no graphics. The simple existence of this executable will affect how docker login works
     # By default, Docker looks for the native binary on each of the platforms, i.e.
     # "osxkeychain" on macOS, "wincred" on windows, and "pass" on Linux. A special
@@ -78,18 +78,25 @@ fi'
     # it cannot find the "pass" binary. If none of these binaries are present, it
     # stores the credentials (i.e. password) in base64 encoding in the config files
     # described above.
-    if [[ "$(runlevel 2>/dev/null || /sbin/runlevel 2>/dev/null || /usr/sbin/runlevel)" =~ 5 ]]; then
-      download_to_file https://github.com/docker/docker-credential-helpers/releases/download/v0.6.4/docker-credential-secretservice-v0.6.4-amd64.tar.gz ~/bin/dch.tgz
-    else
-      download_to_file https://github.com/docker/docker-credential-helpers/releases/download/v0.6.4/docker-credential-pass-v0.6.4-amd64.tar.gz ~/bin/dch.tgz
-    fi
+    # if [[ "$(runlevel 2>/dev/null || /sbin/runlevel 2>/dev/null || /usr/sbin/runlevel)" =~ 5 ]]; then
+    download_to_file https://github.com/docker/docker-credential-helpers/releases/download/v0.6.4/docker-credential-secretservice-v0.6.4-amd64.tar.gz \
+                     ~/bin/docker-credential-secretservice.tgz
+    download_to_file https://github.com/docker/docker-credential-helpers/releases/download/v0.6.4/docker-credential-pass-v0.6.4-amd64.tar.gz \
+                     ~/bin/docker-credential-pass.tgz
+
     pushd ~/bin &> /dev/null
-      tar xf dch.tgz
-      rm dch.tgz
+      tar xf docker-credential-secretservice.tgz
+      tar xf docker-credential-pass.tgz
+      rm docker-credential-secretservice.tgz docker-credential-pass.tgz
     popd &> /dev/null
 
     # Seriously, they can't even get basic permissions right
     chmod 755 ~/bin/docker-credential-*
+
+    echo "Both docker-credential-secretservice and docker-credential-pass were installed."
+    echo "Docker will try docker-credential-pass is 'pass' is installed, else it will use"
+    echo "docker-credential-secretservice (d-bus). To force docker-credential-secretservice,"
+    echo "delete ~/bin/docker-credential-pass"
   fi
 
   source "${DOT_CORE_DIR}/external/vsi_common/linux/just_git_airgap_repo.bsh"
