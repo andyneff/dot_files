@@ -312,14 +312,16 @@ if [ "${BASH_VERSINFO[0]}" -ge "5" -a -n "${WSL_INTEROP+set}" ]; then
   complete -I -F _custom_initial_word_complete
 fi
 
-
-
-
-
-
-
-
-
+# WSL2 fix
+if [ -n "${WSL_INTEROP+set}" ]; then
+  if [ "${HOSTNAME-}" = "kaku" ]; then
+    if [ "${WSL_DISTRO_NAME}" != "Ubuntu-20.04" ]; then
+      if ! /mnt/c/Windows/System32/wsl.exe -d Ubuntu-20.04 service wsl-vpnkit status &>/dev/null; then
+        /mnt/c/Windows/System32/wsl.exe -d Ubuntu-20.04 --user root service wsl-vpnkit start
+      fi
+    fi
+  fi
+fi
 
 #############################
 ### Functions and Aliases ###
@@ -1010,6 +1012,12 @@ function just()
     command just ${@+"${@}"}
   fi
 }
+
+function git_ssh_remote()
+(
+  source ~/.dot/external/dot_core/external/vsi_common/linux/git_functions.bsh
+  convert_git_remote_http_to_git ${@+"${@}"}
+)
 
 function git()
 {
