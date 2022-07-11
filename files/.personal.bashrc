@@ -81,8 +81,9 @@ function add_element_post ()
 if command -v xhost &> /dev/null; then
   if timeout 1 xhost &> /dev/null; then
     X_WORKING=1
+  else
+    X_WORKING=0
   fi
-  X_WORKING=0
 elif timeout 1 xset &> /dev/null; then
   X_WORKING=1
 else

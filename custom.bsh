@@ -7,6 +7,11 @@ source "${DOT_CORE_DIR}/external/vsi_common/linux/requirements.bsh"
 source "${DOT_CORE_DIR}/external/vsi_common/linux/versions.bsh"
 source "${DOT_CORE_DIR}/external/vsi_common/linux/compat.bsh"
 
+function expand_tilde()
+{
+  sed "s|~|${HOME}|g" "${1}" > "${2}"
+}
+
 function setup()
 {
   # Bashrc
@@ -176,6 +181,8 @@ fi'
         ;;
     esac
   fi
+
+  expand_tilde ~/.gnupg/gpg-agent.conf.in ~/.gnupg/gpg-agent.conf
 }
 
 function unsetup()
