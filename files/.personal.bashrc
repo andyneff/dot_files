@@ -78,6 +78,16 @@ function add_element_post ()
   fi
 }
 
+if [ -f ~/.displayrc ]; then
+  source ~/.displayrc
+
+  if [ -z "$(xauth -n list "${DISPLAY}")" ] || ! timeout 1 xhost &> /dev/null; then
+    echo "Stale x11 detected, removing ~/.displayrc"
+    rm -f ~/.displayrc
+    unset DISPLAY
+  fi
+fi
+
 if command -v xhost &> /dev/null; then
   if timeout 1 xhost &> /dev/null; then
     X_WORKING=1
