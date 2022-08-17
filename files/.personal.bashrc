@@ -126,8 +126,6 @@ add_element_post PATH ~/bin
 export PYTHONSTARTUP=~/.pyrc
 #export PS1='\[\e[40;93m\]\w\[\e[0m\]\n[\u@\h \W]$ '
 
-export GPG_TTY="$(tty)"
-
 ################
 ### Bindings ###
 ################
@@ -223,14 +221,27 @@ else
   OS_PROMPT=" \[\e[32m\]Linux\[\e[0m\]"
 fi
 
-PROMPT_COMMAND='__ps1_rv=$?; __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
+source ~/.dot/external/dot_core/external/vsi_common/linux/time_tools.bsh
+get_time_nanoseconds >& /dev/null # preload optimization
+
+PROMPT_COMMAND='__ps1_rv=$?;
+__ps1_time=$(get_time_nanoseconds);
+__git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
 '${SINGULARITY_NAME+\[\e[30;41m\]{${SINGULARITY_NAME}\}\[\e[0m\] }'\
 '${VIRTUAL_ENV+($(basename "${VIRTUAL_ENV}")) }$(printf -v x "%*s" ${SHLVL}; echo -n "${x// /[}")\u@'"${hostcolor-}"'${BC_HOST+${BC_HOST}(}\h${BC_HOST+)}\[\e[0m\] $('\
 'if [ "$__ps1_rv" != "0" ]; then'\
 '  echo "\[\e[41m\]${__ps1_rv}\[\e[0m\]";'\
 'else'\
 '  echo "${__ps1_rv}";'\
-'fi)'"${OS_PROMPT}"' \W" "]$ "; touch ~/.last_ran_command; my_vte_prompt_command'
+'fi)'"${OS_PROMPT}"' \W" "]$ ";
+__ps1_time=$(($(get_time_nanoseconds)-__ps1_time+500000));
+__ps1_time="${__ps1_time::${#__ps1_time}-6}";
+if [ "${__ps1_time}" -gt "250" ]; then
+  echo "Git took ${__ps1_time}ms, this is longer than expected." >&2
+  echo "Consider calling: quick_git_ps1 or set DISABLE_GIT_PROMPT=1" >& 2
+fi;
+touch ~/.last_ran_command;
+my_vte_prompt_command'
 # PROMPT_COMMAND+=$'; printf "\033]0;%s@%s(%s):%s\033\\\\" "${USER}" "${HOSTNAME%%.*}" -1 "${PWD}"'
 # To add a custom terminal title, add '; printf "\033]0;CUSTOM TITLE\007"' to
 # the *end* of PROMPT_COMMAND (After vte_command, which sets it too). You can
@@ -578,7 +589,7 @@ function de_reverse_activate()
   shift 1
   local de_socket="$(mktemp -u -d ~/".ssh/docker_XXXXXXXX")"
 
-  args[0]="$(/opt/projects/just/vsi_common/linux/print_command ssh -t "${@}")"
+  args[0]="$(~/.dot/external/dot_core/external/vsi_common/linux/print_command ssh -t "${@}")"
   args[1]="ssh -t -R '${de_socket}:/var/run/docker.sock' ${phone_home}"
   args[2]="env 'DOCKER_HOST=unix://${de_socket}' 'DISPLAY=${DISPLAY}' bash -c"
   args[3]="cd '$(pwd)'; exec bash"
@@ -590,7 +601,7 @@ function de_reverse_activate()
       args[1]="${CHANGE_USER} ${args[1]}"
     fi
   fi
-  eval "$(/opt/projects/just/vsi_common/linux/quotemire "${args[@]}")"
+  eval "$(~/.dot/external/dot_core/external/vsi_common/linux/quotemire "${args[@]}")"
 }
 
 #**
@@ -684,6 +695,13 @@ function ssh_close_all()
   find ~/.ssh/ -maxdepth 1 -type s -regextype posix-egrep -regex '.*/[0-9a-f]{40}' -print0 | \
     xargs -0 -n1 -I controlpath bash -c "ssh -O exit -S controlpath foobar || rm controlpath"
 }
+
+## GPG ##
+
+export GPG_TTY="$(tty)"
+alias gpg_load_key='gpg --sign -o /dev/null /dev/null'
+alias gpg_reset_agent='gpg-connect-agent reloadagent /bye'
+alias gpg_keyinfo='gpg-connect-agent "keyinfo --list" /bye'
 
 ## Process ##
 
@@ -1007,7 +1025,8 @@ alias pro="pushd /opt/projects/"
 alias notebook="cd ~/notebook; pipenv run jupyter-notebook"
 alias lab="cd ~/notebook; pipenv run jupyter-lab"
 
-alias clear_cache='sudo sh -c "sync && echo 3 > /proc/sys/vm/drop_caches"'
+# alias clear_cache='sudo sh -c "sync && echo 3 > /proc/sys/vm/drop_caches"'
+alias clear_cache='su a-andy -c "sudo -S sh -c \"sync && echo 3 > /proc/sys/vm/drop_caches\""'
 alias clear_swap='sudo sh -c "swapoff -a; swapon -a"'
 
 alias stray_pyc="find . -name \*.pyc -exec bash -c 'x={}; if [ ! -f \${x:0:\${#x}-1} ]; then echo \$x; fi' \;"
