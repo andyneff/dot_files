@@ -323,6 +323,23 @@ if [ "${BASH_VERSINFO[0]}" -ge "5" -a -n "${WSL_INTEROP+set}" ]; then
   complete -I -F _custom_initial_word_complete
 fi
 
+# WSL
+if [ -n "${WSL_DISTRO_NAME+set}" ]; then
+  function mount_self()
+  {
+    mkdir -p "/mnt/wsl/${WSL_DISTRO_NAME}"
+    if sudo -n mount --bind / "/mnt/wsl/${WSL_DISTRO_NAME}/"; then
+      echo "Mounted to /mnt/wsl/${WSL_DISTRO_NAME}/" >&2
+    else
+      (
+        source ~/.dot/external/dot_core/external/vsi_common/linux/quotemire
+        echo "Unable to mount. Make sure the following is in your sudoers file:" >&2
+        quotemire "sudo bash -c" "echo 'ALL ALL=(ALL) NOPASSWD: /usr/bin/mount --bind / $(printf %q /mnt/wsl/${WSL_DISTRO_NAME}/)' > /etc/sudoers.d/wsl_mount_self" >&2
+      )
+    fi
+  }
+fi
+
 # WSL2 fix
 if [ -n "${WSL_INTEROP+set}" ]; then
   if [ "${HOSTNAME-}" = "kaku" ]; then
@@ -646,10 +663,11 @@ alias forcessh='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 alias ssh2="ssh -o ControlPath=none"
 alias sshki="ssh2 -o PreferredAuthentications=keyboard-interactive"
 alias scp2="scp -o ControlPath=none"
+alias ssh3="ssh -o 'UserKnownHostsFile=/dev/null'"
 alias ssh_check='ssh -O check'
 alias ssh_close='ssh -O exit'
-alias ssh_forward='ssh -O forward'
-alias ssh_unforward='ssh -O cancel'
+#alias ssh_forward='ssh -O forward'
+#alias ssh_unforward='ssh -O cancel'
 function ssh_check_socket()
 {
   local pid="$(ssh -S "${1}" -O check 127.0.0.0 2>&1)"
