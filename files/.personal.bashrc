@@ -224,7 +224,7 @@ fi
 source ~/.dot/external/dot_core/external/vsi_common/linux/time_tools.bsh
 get_time_nanoseconds >& /dev/null # preload optimization
 
-PROMPT_COMMAND='__ps1_rv=$?;
+PROMPT_COMMAND='__ps1_rv=${__vsc_status-$?};
 __ps1_time=$(get_time_nanoseconds);
 __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
 '${SINGULARITY_NAME+\[\e[30;41m\]{${SINGULARITY_NAME}\}\[\e[0m\] }'\

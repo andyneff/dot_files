@@ -57,6 +57,7 @@
 	fixitup = "Alternate fixup ??"
 	unpushed = "List branches not push on any remote: \\x1b[33mUsage\\x1b[0m: git unpushed [branch] "
 	ls-ignored = "List ignored files in the current repo"
+	mfa = "Trigger 2fa on gitlab server"
 [alias]
 	aliases = "!for x in $(git config-name-only --get-regex alias | sed -n 's|^alias\\.||p'); do echo -e \"${x} - $(git config --get aliashelp.${x} || echo \\?\\?)\"; done"
 	# config-name-only can have extra lines if newlines are in the alias, such as check-submodules, so sed to filter those out, and remove .alias
@@ -123,6 +124,7 @@
 	fixitup = "!f() { git rebase -i --autostash --autosquash --rebase-merges \"$(git merge-base --octopus $(git unpushed HEAD))\"^; }; f"
 	unpushed = "!f() { git log ${1---branches} --format=%H --not --remotes; }; f"
 	ls-ignored = "ls-files -io --exclude-standard"
+	mfa = ! ssh git@gitlab.vsi-ri.com 2fa_verify
 [http]
 	sslVerify = true
 [color]
