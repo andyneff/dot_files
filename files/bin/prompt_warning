@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+#**
+# .. file:: prompt_warning
+#
+# Create a warning message that will be parsed by my ``PROMPT_COMMAND``
+#
+# :Arguments: * [``-1``] - Optional argument
+#             * ``$1`` - Name of the script that manages this warning message. No two messages can use the same name, so make it unique
+#             * ``$2`` - The message to be displayed. It is automatically wrapped in inverted red color, so you don't have to
+#             * [``$3...``] - Required unless ``-1`` is used. The command that executed when you source this script to fix the problem.
+#
+# .. rubric:: Example
+#
+# .. code-block:: bash
+#
+#     $ prompt_warning -1 oops "Oh no, something went wrong with GPG. Good luck figuring that out"
+#     Oh no, something went wrong with GPG. Good luck figuring that out
+#     $
+#     $
+#     $ prompt_warning docker_login "You appear to not be logged in to the docker registry" docker login www.example.com:5000
+#     You appear to not be logged in to the docker registry. In order to fix this run: source ~/.prompt_command/"docker_login"
+#     $
+#     You appear to not be logged in to the docker registry. In order to fix this run: source ~/.prompt_command/"docker_login"
+#     $ source ~/.prompt_command/"docker_login"
+#     Username: foo
+#     Password:
+#     Docker login: success
+#     $
+#     $
+#**
+
+set -eu
+
+one_time=0
+if [ "${1-}" = "-1" ]; then
+  one_time=1
+  shift 1
+fi
+
+name="${1}"
+message="${2}"
+shift 2
+
+mkdir -p ~/.prompt_command
+
+if [ "${one_time}" = "1" ]; then
+  cat - << EOF > ~/.prompt_command/"${name}"
+    echo "\[\e[41m\]${message}\[\e[0m\]\n"
+    \rm ~/.prompt_command/"${name}"
+EOF
+else
+  cmd=("${@}")
+
+  cat - << EOF > ~/.prompt_command/"${name}"
+    if [ "\${1}" != "0" ]; then
+      (
+        $(declare -p cmd)
+        "\${cmd[@]}"
+      )
+      \rm ~/.prompt_command/"${name}"
+    else
+      echo "\[\e[41m\]${message}\[\e[0m\]. In order to fix this run: source ~/.prompt_command/\"${name}\"\n"
+    fi
+EOF
+fi

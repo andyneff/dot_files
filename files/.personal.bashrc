@@ -101,8 +101,18 @@ else
 fi
 export X_WORKING
 
+# .docker/config
+if [ "${OS-}" = "Windows_NT" ]; then
+  export DOCKER_CONFIG=~/.docker/config_windows.json
+elif [ -n "${WSL_DISTRO_NAME+set}" ]; then
+  export DOCKER_CONFIG=~/.docker/config_wsl.json
+elif [[ ${OSTYPE-} = darwin* ]]; then
+  export DOCKER_CONFIG=~/.docker/config_macos.json
+else
+  export DOCKER_CONFIG=~/.docker/config_linux.json
+fi
+
 if [ "${X_WORKING}" = "1" ]; then
-  export DOCKER_CONFIG=~/.docker/configX.json
   if [[ "${DISPLAY-}" =~ ^:[0-9]+$ ]]; then
     function edit()
     {
@@ -227,6 +237,11 @@ get_time_nanoseconds >& /dev/null # preload optimization
 PROMPT_COMMAND='__ps1_rv=${__vsc_status-$?};
 __ps1_time=$(get_time_nanoseconds);
 __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
+'$(for x in ~/.prompt_command/*; do'\
+'    if [ -r "${x}" ]; then'\
+'      source "${x}" 0;'\
+'    fi;'\
+'  done)'\
 '${SINGULARITY_NAME+\[\e[30;41m\]{${SINGULARITY_NAME}\}\[\e[0m\] }'\
 '${VIRTUAL_ENV+($(basename "${VIRTUAL_ENV}")) }$(printf -v x "%*s" ${SHLVL}; echo -n "${x// /[}")\u@'"${hostcolor-}"'${BC_HOST+${BC_HOST}(}\h${BC_HOST+)}\[\e[0m\] $('\
 'if [ "$__ps1_rv" != "0" ]; then'\
