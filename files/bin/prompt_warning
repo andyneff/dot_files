@@ -5,7 +5,7 @@
 #
 # Create a warning message that will be parsed by my ``PROMPT_COMMAND``
 #
-# :Arguments: * [``-1``] - Optional argument
+# :Arguments: * [``-1``] - Optional first argument. Only print the message once. There ``$3...`` is not used when this flag is specified
 #             * ``$1`` - Name of the script that manages this warning message. No two messages can use the same name, so make it unique
 #             * ``$2`` - The message to be displayed. It is automatically wrapped in inverted red color, so you don't have to
 #             * [``$3...``] - Required unless ``-1`` is used. The command that executed when you source this script to fix the problem.
