@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 if [ -z ${VSI_COMMON_DIR+set} ]; then
   VSI_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/external/dot_core/external/vsi_common"; pwd)"
 fi
@@ -7,24 +9,31 @@ fi
 source "${VSI_COMMON_DIR}/linux/dir_tools.bsh"
 source "${VSI_COMMON_DIR}/linux/just_files/just_install_functions.bsh"
 
-if ! command -v gem; then
+export PATH=~/bin:"${PATH}"
+
+if ! command -v gem &> /dev/null || meet_requirements "$(ruby --version | awk '{print $2}')" "<2.6.7"; then
   # Work in progress, doesn't work great on Fedora
   # Very limited binaries: https://rvm.io/binaries/
-  # gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+  # # gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+  # curl -sSL https://rvm.io/mpapis.asc | gpg2 --import -
+  # curl -sSL https://rvm.io/pkuczynski.asc | gpg2 --import -
   # curl -sSL https://get.rvm.io | bash -s stable --ignore-dotfiles
   # ~/.rvm/bin/rvm install ruby
 
   make_temp_path temp_dir -d
   conda-install --dir "${temp_dir}/conda"
   "${conda_exe}" create -y -p ~/.ruby -c conda-forge ruby ${@+"${@}"}
+  rm -rf "${temp_dir}/conda"
 
-  ln -s ~/.ruby/bin/ruby ~/bin
-  ln -s ~/.ruby/bin/gem ~/bin
+  mkdir -p ~/bin
+  ln -sf ~/.ruby/bin/ruby ~/bin
+  ln -sf ~/.ruby/bin/gem ~/bin
 fi
 
 if ! command -v tmuxinator; then
   gem install --user-install tmuxinator
-fi
 
-# Gem already does something like this
-# ln -s ~/.gem/ruby/gems/tmuxinator-*/bin/tmuxinator ~/bin/tmuxinator
+  # Gem no longer already does something like this
+  # ln -s ~/.gem/ruby/gems/tmuxinator-*/bin/tmuxinator ~/bin/tmuxinator
+  ln -sf "$(gem environment | sed -En 's|^\s*- USER INSTALLATION DIRECTORY: ||p')/gems/tmuxinator-"*/bin/tmuxinator ~/bin/tmuxinator
+fi
