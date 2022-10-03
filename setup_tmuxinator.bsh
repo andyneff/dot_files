@@ -8,6 +8,7 @@ fi
 
 source "${VSI_COMMON_DIR}/linux/dir_tools.bsh"
 source "${VSI_COMMON_DIR}/linux/just_files/just_install_functions.bsh"
+source "${VSI_COMMON_DIR}/linux/requirements.bsh"
 
 export PATH=~/bin:"${PATH}"
 
