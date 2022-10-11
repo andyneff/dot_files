@@ -59,6 +59,15 @@
 	ls-ignored = "List ignored files in the current repo"
 	mfa = "Trigger 2fa on gitlab server"
 [alias]
+	# To define a complex alias:
+	# git config --global alias.alias-name '!'"$(cat << 'EOF'
+	# function my_function()
+	# {
+	#   <<normal bash code here>>
+	# }
+	# my_function
+	# EOF
+	# )"
 	aliases = "!for x in $(git config-name-only --get-regex alias | sed -n 's|^alias\\.||p'); do echo -e \"${x} - $(git config --get aliashelp.${x} || echo \\?\\?)\"; done"
 	# config-name-only can have extra lines if newlines are in the alias, such as check-submodules, so sed to filter those out, and remove .alias
 	config-name-only = "!bash -c '. ~/.dot/external/dot_core/external/vsi_common/linux/versions.bsh; if meet_requirements \"$(git_version)\" \"<2.6\"; then git config \"${@}\" | awk \"{print \\$1}\"; else git config --name-only \"${@}\"; fi' --"
@@ -136,7 +145,7 @@
 	helper = cache --timeout=3600
 [core]
 	editor = ~/bin/git_edit
-  excludesFile = ~/.gitignore
+	excludesFile = ~/.gitignore
 [diff]
 	tool = meld
 # [status]
