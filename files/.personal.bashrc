@@ -705,7 +705,7 @@ function ssh_check_socket()
 }
 
 # Disable capture mouse clicks to terminal which tmux turn on, and gets left on if ssh connection disconnects.
-alias mouse_reset="echo $'\x1b[?1000l'"
+alias mouse_reset="echo -n $'\x1b[?1000l'"
 
 function ssh_close_all()
 {
