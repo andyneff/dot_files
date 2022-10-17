@@ -1393,3 +1393,5 @@ function ppcd()
 #   pushd .
 # fi
 
+# In Git for Windows, list all the open VSOCK ports that WSLg is using for graphics... Still can't figure out who is which
+# for port in $(powershell "gwmi -Query \"select CommandLine from win32_process where Name='mstsc.exe'\" | Format-List -Property CommandLine" | sed -En 's|.*hvsocketserviceid:([0-9A-F]{8})-.*|\1|p'); do echo -n "$((16#$port))|"; done; echo 0
