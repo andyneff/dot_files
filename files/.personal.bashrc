@@ -78,6 +78,9 @@ function add_element_post ()
   fi
 }
 
+if [ -n "${DISPLAY+set}" ]; then
+  _ORIGINAL_DISPLAY="${DISPLAY}"
+fi
 if [ -f ~/.displayrc ]; then
   source ~/.displayrc
 
@@ -85,10 +88,16 @@ if [ -f ~/.displayrc ]; then
     echo "Stale x11 detected, removing ~/.displayrc"
     rm -f ~/.displayrc
     unset DISPLAY
+    if [ -n "${_ORIGINAL_DISPLAY+set}" ]; then
+      DISPLAY="${_ORIGINAL_DISPLAY}"
+    fi
   fi
 fi
+unset _ORIGINAL_DISPLAY
 
-if command -v xhost &> /dev/null; then
+if [[ "${DISPLAY-}" =~ ^:[0-9]+$ ]]; then
+  X_WORKING=1 #don't check :0
+elif command -v xhost &> /dev/null; then
   if timeout 1 xhost &> /dev/null; then
     X_WORKING=1
   else
