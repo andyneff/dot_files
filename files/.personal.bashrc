@@ -103,13 +103,15 @@ export X_WORKING
 
 # .docker/config
 if [ "${OS-}" = "Windows_NT" ]; then
-  export DOCKER_CONFIG=~/.docker/config_windows.json
+  export DOCKER_CONFIG=~/.docker/windows
 elif [ -n "${WSL_DISTRO_NAME+set}" ]; then
-  export DOCKER_CONFIG=~/.docker/config_wsl.json
+  # export DOCKER_CONFIG=~/.docker/wsl
+  # WSL has special integration, it's just easier to leave it here for now
+  export DOCKER_CONFIG=~/.docker
 elif [[ ${OSTYPE-} = darwin* ]]; then
-  export DOCKER_CONFIG=~/.docker/config_macos.json
+  export DOCKER_CONFIG=~/.docker/macos
 else
-  export DOCKER_CONFIG=~/.docker/config_linux.json
+  export DOCKER_CONFIG=~/.docker/linux
 fi
 
 if [ "${X_WORKING}" = "1" ]; then
