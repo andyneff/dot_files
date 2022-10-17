@@ -694,6 +694,35 @@ function dcpfv2()
 
 alias dc_images_list='docker images -a -q | uniq'
 
+function docker_fun()
+{
+  local args=("${@}")
+
+  while (( ${#} )); do
+    case "${1}" in
+      -H|-l|\
+      --config|--context|--host|--log-level|--tlscacert|--tlscert|--tlskey)
+        shift 1
+        shift 1
+        ;;
+      -*|image)
+        shift 1
+        ;;
+      images|ls)
+        command docker "${args[@]}" | sed -E 's|^([^ ]*) ( *)([^ ]*)|\1:\3\2|'
+        return
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  command docker "${args[@]}"
+  return
+}
+alias docker=docker_fun
+
 ## SSH ##
 
 alias forcessh='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
