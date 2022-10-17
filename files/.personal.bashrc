@@ -748,7 +748,7 @@ alias mouse_reset="echo -n $'\x1b[?1000l'"
 function ssh_close_all()
 {
   find ~/.ssh/ -maxdepth 1 -type s -regextype posix-egrep -regex '.*/[0-9a-f]{40}' -print0 | \
-    xargs -0 -n1 -I controlpath bash -c "ssh -O exit -S controlpath foobar || rm controlpath"
+    xargs -0 -I controlpath bash -c "ssh -O exit -S controlpath foobar || rm controlpath"
 }
 
 ## GPG ##
