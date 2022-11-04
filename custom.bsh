@@ -113,12 +113,12 @@ fi'
     convert_git_remote_http_to_git > /dev/null
   popd &> /dev/null
 
-  if [ ! -e ~/.ssh/id_ed25519_bb ]; then
-    ssh-keygen -f ~/.ssh/id_ed25519_bb -t ed25519
-    validate_ssh_key ~/.ssh/id_ed25519_bb
+  if [ ! -e ~/.ssh/id_ed25519_gl ]; then
+    ssh-keygen -f ~/.ssh/id_ed25519_gl -t ed25519
+    validate_ssh_key ~/.ssh/id_ed25519_gl
 
-    echo "Add this to bitbuket"
-    cat ~/.ssh/id_ed25519_bb.pub
+    echo "Add this to gitlab"
+    cat ~/.ssh/id_ed25519_gl.pub
   fi
 
   # if [ "${OS-}" = "Windows_NT" -a ! -f ~/bin/python310/python.exe ] || \
