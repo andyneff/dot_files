@@ -156,7 +156,7 @@ fi'
         rm -r "${tempdir}"
         ;;
       windows)
-        msiexec /ju https://awscli.amazonaws.com/AWSCLIV2.msi "AWSCLIV2=C:\Users\andy\awscli"
+        MSYS2_ARG_CONV_EXCL="*" msiexec /ju https://awscli.amazonaws.com/AWSCLIV2.msi "AWSCLIV2=C:\Users\andy\awscli"
         ;;
       macos)
         download_to_file https://awscli.amazonaws.com/AWSCLIV2.pkg aws.pkg
