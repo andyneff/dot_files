@@ -8,4 +8,7 @@ if (sys.version_info[0] == 2) or ('PIPENV_ACTIVE' in os.environ):
     import rlcompleter
     readline.parse_and_bind("tab: complete")
     del readline, rlcompleter
+if (sys.version_info[0] == 3) and os.name == "nt":
+  sys.path.append(os.path.expanduser('~\\.python_readline'))
+
 del sys, os

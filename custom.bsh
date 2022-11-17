@@ -166,6 +166,18 @@ fi'
         # echo '#!/usr/bin/env bash' > ~/bin/aws
         # echo '~/awscli/aws.exe "${@}"' >> ~/bin/aws
       fi
+      if [ ! -f ~/.python_readline/pyreadline3/__init__.py ]; then
+        mkdir -p ~/.python_readline
+        pushd ~/.python_readline
+          curl -LO https://files.pythonhosted.org/packages/56/fc/a3c13ded7b3057680c8ae95a9b6cc83e63657c38e0005c400a5d018a33a7/pyreadline3-3.4.1-py3-none-any.whl
+          unzip pyreadline3-3.4.1-py3-none-any.whl
+          rm pyreadline3-3.4.1-py3-none-any.whl
+        popd
+        # This does not "apply" the change immediately to the next spawned
+        # command prompt without rebooting or using a GUI to refresh it, setx does
+        # powershell "Set-Itemproperty -Path HKCU:\Environment -Name PYTHONSTARTUP -Value $(cygpath -w ~/.pyrc)"
+        setx PYTHONSTARTUP "$(cygpath -w ~/.pyrc)"
+      fi
       ;;
     macos)
       if [ ! -f ~/awscli/aws ]; then
