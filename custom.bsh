@@ -144,9 +144,9 @@ fi'
   #   "${AWS_VENV_BIN_DIR}/pip" install aws
   # fi
 
-  if [ ! -f ~/bin/aws ]; then
-    case "${DOT_OS}" in
-      linux)
+  case "${DOT_OS}" in
+    linux)
+      if [ ! -f ~/bin/aws ]; then
         tempdir="$(mktemp -d)"
         download_to_file https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip "${tempdir}/awscli.zip"
         pushd "${tempdir}" &> /dev/null
@@ -154,11 +154,21 @@ fi'
           ./aws/install -i ~/awscli -b ~/bin/
         popd
         rm -r "${tempdir}"
-        ;;
-      windows)
-        MSYS2_ARG_CONV_EXCL="*" msiexec /ju https://awscli.amazonaws.com/AWSCLIV2.msi "AWSCLIV2=C:\Users\andy\awscli"
-        ;;
-      macos)
+      fi
+      ;;
+    windows)
+      if [ ! -f ~/awscli/aws.exe ]; then
+        echo "Installing aws cli... (May take ~30 seconds)"
+        MSYS2_ARG_CONV_EXCL="*" msiexec /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn "AWSCLIV2=$(cygpath -w "${HOME}")\\awscli"
+        # Does not work: Error loading Python DLL 'C:\Users\andy\bin\python39.dll'
+        # symlink ~/awscli/aws.exe ~/bin/aws.exe
+        # Not needed, as the installer adds itself to your PATH >:|
+        # echo '#!/usr/bin/env bash' > ~/bin/aws
+        # echo '~/awscli/aws.exe "${@}"' >> ~/bin/aws
+      fi
+      ;;
+    macos)
+      if [ ! -f ~/awscli/aws ]; then
         download_to_file https://awscli.amazonaws.com/AWSCLIV2.pkg aws.pkg
         echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
@@ -178,9 +188,10 @@ fi'
             -target ~/awscli \
             -applyChoiceChangesXML aws.xml
         rm aws.pkg aws.xml
-        ;;
-    esac
-  fi
+        # Need symlink? Untested, I'm guessing no
+      fi
+      ;;
+  esac
 
   expand_tilde ~/.gnupg/gpg-agent.conf.in ~/.gnupg/gpg-agent.conf
 }
