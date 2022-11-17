@@ -115,7 +115,7 @@
 	detach = "!git checkout `git rev-parse HEAD`"
 	branch-merged = branch --merged HEAD
 	branch-unmerged = "!git branch --color=never -a -q --no-merged HEAD | sed 's| -> .*||' | xargs -L1 git --no-pager show -s --oneline --author='Neff'"
-	apply-gitattributes = !git checkout-index --force-all && git submodule foreach --recursive git checkout-index --force-all
+	apply-gitattributes = !git checkout-index --force --all && git submodule foreach --recursive git checkout-index --force --all
 	apply-permissions = !git diff -p -R --no-color --submodule=diff | grep -E "^(diff|(old|new) mode)" --color=never | git apply
 	# This should actually read IFS=$'\\n', but I'm not fixing it, because it adds a literal newline in the alias, and makes sure other things tolerate it
 	check-submodules = !"IFS=$'\n'; for x in $(git config --name-only --file .gitmodules --get-regexp '^submodule\\..*\\.path$'); do git diff --submodule=log \"$(git config --file .gitmodules --get \"${x}\")\"; done"
