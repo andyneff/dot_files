@@ -2,6 +2,14 @@
 
 set -eu
 
+# TODO: Make functions for this in VSI Common
+if [ "${OS-}" = "Windows_NT" ]; then
+  if [ "$(powershell '$user = [Security.Principal.WindowsIdentity]::GetCurrent(); (New-Object Security.Principal.WindowsPrincipal $user).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)')" = "False" ]; then
+    powershell "Start-Process -Verb runas -FilePath \"$(cygpath -w "$(which bash)")\" -ArgumentList \"-l '${BASH_SOURCE[0]}'\""
+    exit
+  fi
+fi
+
 export DOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
 
 # 1. Make sure dot is there
