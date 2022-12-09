@@ -133,7 +133,7 @@
 	fixitup = "!f() { git rebase -i --autostash --autosquash --rebase-merges \"$(git merge-base --octopus $(git unpushed HEAD))\"^; }; f"
 	unpushed = "!f() { git log ${1---branches} --format=%H --not --remotes; }; f"
 	ls-ignored = "ls-files -io --exclude-standard"
-	mfa = ! ssh git@gitlab.vsi-ri.com 2fa_verify
+	mfa = ! echo $1 | ssh git@gitlab.vsi-ri.com 2fa_verify
 [http]
 	sslVerify = true
 [color]
