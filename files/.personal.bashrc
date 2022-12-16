@@ -381,8 +381,8 @@ fi
 if [ -n "${WSL_INTEROP+set}" ]; then
   if [ "${HOSTNAME-}" = "kaku" ]; then
     if [ "${WSL_DISTRO_NAME}" != "Ubuntu-20.04" ]; then
-      if ! /mnt/c/Windows/System32/wsl.exe -d Ubuntu-20.04 service wsl-vpnkit status &>/dev/null; then
-        /mnt/c/Windows/System32/wsl.exe -d Ubuntu-20.04 --user root service wsl-vpnkit start
+      if ! /mnt/c/Windows/System32/wsl.exe --cd / -d Ubuntu-20.04 service wsl-vpnkit status &>/dev/null; then
+        /mnt/c/Windows/System32/wsl.exe --cd / -d Ubuntu-20.04 --user root service wsl-vpnkit start
       fi
     fi
   fi
@@ -693,6 +693,55 @@ function dcpfv2()
 }
 
 alias dc_images_list='docker images -a -q | uniq'
+
+# Get an anonymous token. $1 = repo (no tag)
+function docker_login()
+{
+  TOKEN=$(curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${1}:pull" | jq -r .token)
+}
+
+function pad_base64()
+{
+  local data="${1-$(cat -)}"
+  case $((${#data} % 4)) in
+    2)
+      data+="=="
+      ;;
+    3)
+      data+="="
+      ;;
+  esac
+  echo -n "${data}"
+}
+
+function jwt()
+{
+  local IFS=.
+  local tokens=(${1-$(cat -)})
+
+  # Break apart the main components
+  local header=$(pad_base64 <<< "${tokens[0]}" | base64 -d)
+  local payload=$(pad_base64 <<< "${tokens[1]}" | base64 -d)
+  local signature=$(pad_base64 <<< "${tokens[2]}" | tr _- /+) # why was /+ replaced with _-?
+
+  # Print
+  jq <<< "${header}"
+  jq <<< "${payload}"
+
+  ########################
+  # The rest assumes RS256
+  ########################
+
+  local pub_cert=$(jq -r '.x5c[0]' <<< "${header}" | pad_base64)
+  pub_cert=$'-----BEGIN CERTIFICATE-----\n'"${pub_cert}"$'\n-----END CERTIFICATE-----'
+  local pub_key=$(openssl x509 -pubkey -noout -inform PEM <<< "${pub_cert}")
+
+  # Verify signature
+  echo -n "${tokens[0]}.${tokens[1]}" | openssl dgst -sha256 -verify <(echo -n "${pub_key}") -signature <(base64 -d <<< "${signature}")
+
+  # # Useless information
+  # openssl x509 -noout -text -inform PEM <<< "${pub_cert}"
+}
 
 function docker_fun()
 {
