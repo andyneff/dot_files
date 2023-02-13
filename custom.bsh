@@ -147,13 +147,17 @@ fi'
   case "${DOT_OS}" in
     linux)
       if [ ! -f ~/bin/aws ]; then
-        tempdir="$(mktemp -d)"
-        download_to_file https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip "${tempdir}/awscli.zip"
-        pushd "${tempdir}" &> /dev/null
-          unzip awscli.zip
-          ./aws/install -i ~/awscli -b ~/bin/
-        popd
-        rm -r "${tempdir}"
+        if command -v unzip &> /dev/null; then
+          tempdir="$(mktemp -d)"
+          download_to_file https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip "${tempdir}/awscli.zip"
+          pushd "${tempdir}" &> /dev/null
+            unzip awscli.zip
+            ./aws/install -i ~/awscli -b ~/bin/
+          popd
+          rm -r "${tempdir}"
+        else
+          echo "unzip not installed, Skipping aws cli setup"
+        fi
       fi
       ;;
     windows)
