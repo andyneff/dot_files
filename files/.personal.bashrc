@@ -1444,3 +1444,36 @@ function ppcd()
 
 # In Git for Windows, list all the open VSOCK ports that WSLg is using for graphics... Still can't figure out who is which
 # for port in $(powershell "gwmi -Query \"select CommandLine from win32_process where Name='mstsc.exe'\" | Format-List -Property CommandLine" | sed -En 's|.*hvsocketserviceid:([0-9A-F]{8})-.*|\1|p'); do echo -n "$((16#$port))|"; done; echo 0
+
+#**
+# .. function:: progress
+#
+# Like the ``time`` command, only gives you live update on the elapsed time
+#
+# :Arguments: * ``$1...`` - Command to executre
+#
+#  .. rubric:: Example:
+#
+#  .. code:: bash
+#
+#     progress sleep 10
+#**
+function progress()
+( # This prevents the Done and [1] Pid# printouts; so would disabling job monitoring, but this is easier and more robust
+  source ~/.dot/external/dot_core/external/vsi_common/linux/time_tools.bsh
+  get_time_nanoseconds > /dev/null # pre-cache
+
+  local dt=0.25
+  local ppid=$$
+  tic
+  {
+    while kill -0 "${ppid}" &> /dev/null; do
+      echo -ne "$(toc_ms)\033[0K\r" >&2
+      sleep "${dt}"
+    done
+  } &
+  local cpid=$!
+  "${@}"
+  kill "${cpid}"
+  echo "$(toc_ms)" >&2
+)
