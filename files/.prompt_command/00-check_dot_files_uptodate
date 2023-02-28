@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+revisit_rate=86400
+check_file=~/.config/dot_files/check_dot_files_uptodate
+
+function check_dot_files()
+{
+  # Only run once a day
+  local mod_time
+  local now_time=$(date +%s)
+  if [ -f "${check_file}" ]; then
+    if [[ ${OSTYPE-} = darwin* ]]; then
+      mod_time=$(stat -f %m "${check_file}")
+    else
+      mod_time=$(stat -c %Y "${check_file}")
+    fi
+    # Update it now
+    touch "${check_file}"
+    if [ $((now_time - mod_time)) -lt 86400 ]; then
+      return
+    fi
+  else
+    # First create
+    mkdir -p ~/.config/dot_files
+    touch "${check_file}"
+  fi
+
+  local remote_sha=$(git ls-remote https://github.com/andyneff/dot_files.git main | awk '{print $1}')
+  local head=$(cd ~/.dot; git rev-parse HEAD)
+  if [ "${remote_sha}" != "${head}" ]; then
+    prompt_warning \
+      10-check_dot_files_uptodate \
+      "Your ~/.dot repo is not the same as https://github.com/andyneff/dot_files.git HEAD. Please update local and/or remote" \
+      rm "${check_file}"
+  else
+    if [ -f ~/.prompt_command/10-check_dot_files_uptodate ]; then
+      rm ~/.prompt_command/10-check_dot_files_uptodate
+    fi
+  fi
+}
+
+check_dot_files&
