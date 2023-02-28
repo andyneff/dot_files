@@ -1450,7 +1450,7 @@ function ppcd()
 #
 # Like the ``time`` command, only gives you live update on the elapsed time
 #
-# :Arguments: * ``$1...`` - Command to executre
+# :Arguments: * ``$1...`` - Command to execute
 #
 #  .. rubric:: Example:
 #
@@ -1461,19 +1461,24 @@ function ppcd()
 function progress()
 ( # This prevents the Done and [1] Pid# printouts; so would disabling job monitoring, but this is easier and more robust
   source ~/.dot/external/dot_core/external/vsi_common/linux/time_tools.bsh
+  source ~/.dot/external/dot_core/external/vsi_common/linux/signal_tools.bsh
+  set_bashpid
+  
   get_time_nanoseconds > /dev/null # pre-cache
-
   local dt=0.25
-  local ppid=$$
+
+  local ppid="${BASHPID}"
+
   tic
   {
     while kill -0 "${ppid}" &> /dev/null; do
-      echo -ne "$(toc_ms)\033[0K\r" >&2
+      #echo -ne "$(toc_ms)\033[0K\r" >&2
+      printf '\e]2;%s\e\\' "$(toc_ms)"
       sleep "${dt}"
     done
   } &
   local cpid=$!
-  "${@}"
+  time "${@}"
   kill "${cpid}"
-  echo "$(toc_ms)" >&2
+  printf '\e]2;%s\e\\' "$(toc_ms)"
 )
