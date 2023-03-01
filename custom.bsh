@@ -185,26 +185,15 @@ fi'
       ;;
     macos)
       if [ ! -f ~/awscli/aws ]; then
-        download_to_file https://awscli.amazonaws.com/AWSCLIV2.pkg aws.pkg
-        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-<plist version=\"1.0\">
-  <array>
-    <dict>
-      <key>choiceAttribute</key>
-      <string>customLocation</string>
-      <key>attributeSetting</key>
-      <string>"~"</string>
-      <key>choiceIdentifier</key>
-      <string>default</string>
-    </dict>
-  </array>
-</plist>" > aws.xml
-        installer -pkg aws.pkg \
-            -target ~/awscli \
-            -applyChoiceChangesXML aws.xml
-        rm aws.pkg aws.xml
-        # Need symlink? Untested, I'm guessing no
+        mkdir -p ~/awscli/pkg
+        pushd ~/awscli/pkg &> /dev/null
+          download_to_file https://awscli.amazonaws.com/AWSCLIV2.pkg aws.pkg
+	  xar -xf aws.pkg
+          cat  ~/awscli/pkg/aws-cli.pkg/Payload | gunzip -dc | cpio -i
+          mv ~/awscli/pkg/aws-cli/* ~/awscli
+        popd &> /dev/null
+        rm -r ~/awscli/pkg
+        ln -s ~/awscli/aws ~/bin/aws
       fi
       ;;
   esac
