@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -eu
+
+args1=()
+args2=()
+
+while (( ${#} )); do
+  args2+=($1)
+  if [ "${1}" = "-i" ]; then
+    args1+=("${args2[@]}" "${2}")
+    shift 1
+    args2=()
+  fi
+  shift 1
+done
+
+ffmpeg "${args1[@]}" -filter_complex "[0:v] palettegen" palette.png
+ffmpeg "${args1[@]}" -i palette.png -filter_complex "[0:v][1:v] paletteuse" "${args2[@]}"
