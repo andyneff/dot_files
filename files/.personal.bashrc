@@ -601,7 +601,7 @@ function de_activate()
 #
 #     de_reverse_activate my_username@my_hostname username@server -p 1234
 #     # or
-#     CHANGE_SINGLE="sudo su - root -c" de_reverse_activate my_username@my_hostname username@server -p 1234
+#     CHANGE_SINGLE="1" CHANGE_USER="sudo su - root -c" de_reverse_activate my_username@my_hostname username@server -p 1234
 #     # or
 #     CHANGE_USER="sudo" de_reverse_activate my_username@my_hostname username@server -p 1234
 #
