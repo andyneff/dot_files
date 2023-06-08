@@ -1000,7 +1000,7 @@ for node in data['nodes'].values():
   elif 'available_queues' in node['resources_available']:
     ctypes = node['resources_available']['available_queues'].split(',')
   else:
-    ctypes = [None]
+    ctypes = ['None']
   for ctype in ctypes:
     if ctype not in cluster_types:
       cluster_types[ctype] = [0,0]
@@ -1058,7 +1058,6 @@ def pprint(conf):
         print('---')
       else:
         print(config_f.format(c[0], c[1]))
-print(config_f, config_f2, config_keys)
 pprint(config_count)
 
 if config_count_hie:
