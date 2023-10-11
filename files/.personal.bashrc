@@ -38,7 +38,12 @@ HISTSIZE=1000
 HISTFILESIZE=2000
 
 # Make LESS always use ANSI (raw mode)
-export LESS=R
+# https://askubuntu.com/a/1156810
+export LESS=FRX
+# There is still a possibility this will mess up another application in the future
+# at which point, I should use one of these?
+# alias less="less -FRX"
+# alias less="env LESS=FRX less"
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -1465,7 +1470,7 @@ function progress()
   source ~/.dot/external/dot_core/external/vsi_common/linux/time_tools.bsh
   source ~/.dot/external/dot_core/external/vsi_common/linux/signal_tools.bsh
   set_bashpid
-  
+
   get_time_nanoseconds > /dev/null # pre-cache
   local dt=0.25
 
