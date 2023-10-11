@@ -12,7 +12,7 @@
 	config-name-only = "A backwards compatible way to handle --name-only on git versions earlier than 2.6. Note: Literal newlines in config values \"\\\\n\" will result in extra lines in older versions of git"
 	st = "Scott status"
 	l = "Andy log"
-	l2 = "Andy log that shows all branchs that are attached to the currenty HEAD. It's like --all without orphaned trees"
+	la = "Andy log that shows all branchs that are attached to the currenty HEAD. It's like --all without orphaned trees"
 	# pushall = "Push to all remotes (not used anymore)"
 	# fetchall = "Fetch from all remotes (not used anymore)"
 	# branches = "List branches in current module and all submodules (not used anymore)"
@@ -74,7 +74,7 @@
 	st1 = !git -c color.status=always status -s | while IFS='' read line\\\\; do IFS=' ' blah=($line); echo $(stat -c %z ${blah[1]}) ${line}; IFS='';" done | sort | cut -c 37-
 	st = !git -c color.status=always status -s | "while IFS='' read line; do IFS=' ' blah=($line); echo \"$(stat -c %z ${blah[1]}) ${line}\"; IFS=''; done" | sort | cut -c 37-
 	l = log --decorate --graph
-	l2 = !"git log --decorate --graph $(git branch --color=never -a --contains $(git rev-list HEAD | tail -n1) | sed '/ detached at /d; s|^..||; s| -> .*||')"
+	la = !"git log --decorate --graph $(git branch --color=never -a --contains $(git rev-list HEAD | tail -n1) | sed '/ detached at /d; s|^..||; s| -> .*||')"
 	# pushall = !git remote | xargs -L1 -I{} git push {}
 	# fetchall = fetch --all
 	# branches = !git branch && git submodule foreach git branch

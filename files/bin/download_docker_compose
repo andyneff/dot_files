@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+set -eu
+
+if [ -n "${GITHUB_TOKEN+set}" ]; then
+  function curl2()
+  {
+    # Check unauth rate limit: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limit-headers
+    # curl -IisSL https://api.github.com/ | grep ^x-ratelimit
+    # x-ratelimit-reset |
+    curl --header "Authorization: Bearer ${GITHUB_TOKEN}" "${@}"
+  }
+else
+  function curl2()
+  {
+    curl "${@}"
+  }
+fi
+
+# $1 - Number of versions to download
+
+declare -i count=${1-1000}
+download_dir=${2-~/bin}
+declare -i page=1
+
+while (( count > 0 )); do
+  left="${count}"
+  if (( count > 100 )); then
+    left=100
+  fi
+
+  next_page=$(curl2 "https://api.github.com/repos/docker/compose/releases?per_page=${left}&page=${page}")
+
+  IFS=$'\n'
+  cmds=($(sed -En 's@ *"browser_download_url": "(.*/download/v?(.*)/docker-compose-(linux-x86_64|Linux-x86_64|linux-amd64))"@curl -L -o '"${download_dir}/docker-compose-"'\2 \1@p' <<< "${next_page}"))
+  filenames=($(awk '{print $4}' <<< "${cmds[*]}"))
+
+  for i in "${!cmds[@]}"; do
+    if [ ! -f "${filenames[i]}" ]; then
+      eval "${cmds[i]}"
+      chmod 755 "${filenames[i]}"
+    fi
+  done
+
+  if (( $(echo "${next_page}" | grep '^    "id":' | wc -l) < 100 )); then
+    break
+  fi
+  count=$((count - 100))
+  page+=1
+done
