@@ -11,6 +11,7 @@
 	aliases = "List aliases and help"
 	config-name-only = "A backwards compatible way to handle --name-only on git versions earlier than 2.6. Note: Literal newlines in config values \"\\\\n\" will result in extra lines in older versions of git"
 	st = "Scott status"
+	submodule-summary = "Scott's submodule summary to show how ahead/behind a submodule is"
 	l = "Andy log"
 	la = "Andy log that shows all branchs that are attached to the currenty HEAD. It's like --all without orphaned trees"
 	# pushall = "Push to all remotes (not used anymore)"
@@ -68,6 +69,21 @@
 	# my_function
 	# EOF
 	# )"
+	submodule-summary = "! \
+	  f() { \
+	  pushd \"${GIT_PREFIX:-.}\" &>/dev/null && \
+	    local arg && \
+	    local grep_args=() && \
+	    for arg in \"${@:-.+}\"; do \
+	      `# Strip trailing /` \
+	      grep_args+=('-E' ^\"${arg%/}\"$); \
+	    done && \
+	    local IFS=$'\n' && \
+	    for sm_path in $(git submodule foreach --quiet 'echo \"${displaypath}\"' | grep \"${grep_args[@]}\"); do \
+	      git diff --submodule=log \"${sm_path}\"; \
+	    done; \
+	  popd &>/dev/null; \
+	}; f"
 	aliases = "!for x in $(git config-name-only --get-regex alias | sed -n 's|^alias\\.||p'); do echo -e \"${x} - $(git config --get aliashelp.${x} || echo \\?\\?)\"; done"
 	# config-name-only can have extra lines if newlines are in the alias, such as check-submodules, so sed to filter those out, and remove .alias
 	config-name-only = "!bash -c '. ~/.dot/external/dot_core/external/vsi_common/linux/versions.bsh; if meet_requirements \"$(git_version)\" \"<2.6\"; then git config \"${@}\" | awk \"{print \\$1}\"; else git config --name-only \"${@}\"; fi' --"
@@ -172,3 +188,5 @@
 	follow = true
 [init]
 	defaultBranch = main
+[advice]
+	skippedCherryPicks = false
