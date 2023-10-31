@@ -385,16 +385,17 @@ if [ -n "${WSL_DISTRO_NAME+set}" ]; then
   }
 fi
 
+# Deprecated: https://github.com/microsoft/WSL/issues/4246#issuecomment-1778060287
 # WSL2 fix
-if [ -n "${WSL_INTEROP+set}" ]; then
-  if [ "${HOSTNAME-}" = "kaku" ]; then
-    if [ "${WSL_DISTRO_NAME}" != "Ubuntu-20.04" ]; then
-      if ! /mnt/c/Windows/System32/wsl.exe --cd / -d Ubuntu-20.04 service wsl-vpnkit status &>/dev/null; then
-        /mnt/c/Windows/System32/wsl.exe --cd / -d Ubuntu-20.04 --user root service wsl-vpnkit start
-      fi
-    fi
-  fi
-fi
+# if [ -n "${WSL_INTEROP+set}" ]; then
+#   if [ "${HOSTNAME-}" = "kaku" ]; then
+#     if [ "${WSL_DISTRO_NAME}" != "Ubuntu-20.04" ]; then
+#       if ! /mnt/c/Windows/System32/wsl.exe --cd / -d Ubuntu-20.04 service wsl-vpnkit status &>/dev/null; then
+#         /mnt/c/Windows/System32/wsl.exe --cd / -d Ubuntu-20.04 --user root service wsl-vpnkit start
+#       fi
+#     fi
+#   fi
+# fi
 
 #############################
 ### Functions and Aliases ###
