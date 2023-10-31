@@ -59,6 +59,7 @@
 	unpushed = "List branches not push on any remote: \\x1b[33mUsage\\x1b[0m: git unpushed [branch] "
 	ls-ignored = "List ignored files in the current repo"
 	mfa = "Trigger 2fa on gitlab server"
+  http2git = "Convert http url to git url, push only if it is reachable without auth"
 [alias]
 	# To define a complex alias:
 	# git config --global alias.alias-name '!'"$(cat << 'EOF'
@@ -84,7 +85,7 @@
 	    done; \
 	  popd &>/dev/null; \
 	}; f"
-	aliases = "!for x in $(git config-name-only --get-regex alias | sed -n 's|^alias\\.||p'); do echo -e \"${x} - $(git config --get aliashelp.${x} || echo \\?\\?)\"; done"
+	aliases = "!function help(){ for x in $(git config-name-only --get-regex alias | sed -n 's|^alias\\.||p'); do echo -e \"${x} - $(git config --get aliashelp.${x} || echo \\?\\?)\"; done; }; if [ $# -gt 0 ]; then help | grep ${1}; else help; fi; :"
 	# config-name-only can have extra lines if newlines are in the alias, such as check-submodules, so sed to filter those out, and remove .alias
 	config-name-only = "!bash -c '. ~/.dot/external/dot_core/external/vsi_common/linux/versions.bsh; if meet_requirements \"$(git_version)\" \"<2.6\"; then git config \"${@}\" | awk \"{print \\$1}\"; else git config --name-only \"${@}\"; fi' --"
 	st1 = !git -c color.status=always status -s | while IFS='' read line\\\\; do IFS=' ' blah=($line); echo $(stat -c %z ${blah[1]}) ${line}; IFS='';" done | sort | cut -c 37-
@@ -102,7 +103,7 @@
 	ci = commit --interactive
 	ai = add --interactive
 	unadd = reset HEAD
-	blameline = log --follow -L
+	blameline = log -L
 	versions = log --pretty=format:%H
 	lhist = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
 	# lpatch = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short --patch
@@ -150,6 +151,7 @@
 	unpushed = "!f() { git log ${1---branches} --format=%H --not --remotes; }; f"
 	ls-ignored = "ls-files -io --exclude-standard"
 	mfa = ! echo $1 | ssh git@gitlab.vsi-ri.com 2fa_verify
+  http2git = "!bash -c '. ~/.dot/external/dot_core/external/vsi_common/linux/git_functions.bsh; convert_git_remote_http_to_git \"${@}\"' -- "
 [http]
 	sslVerify = true
 [color]
