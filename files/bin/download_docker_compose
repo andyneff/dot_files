@@ -8,6 +8,8 @@ if [ -n "${GITHUB_TOKEN+set}" ]; then
     # Check unauth rate limit: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limit-headers
     # curl -IisSL https://api.github.com/ | grep ^x-ratelimit
     # x-ratelimit-reset |
+    # Get token here:
+    # https://github.com/settings/tokens?type=beta
     curl --header "Authorization: Bearer ${GITHUB_TOKEN}" "${@}"
   }
 else
@@ -29,14 +31,16 @@ while (( count > 0 )); do
     left=100
   fi
 
-  next_page=$(curl2 "https://api.github.com/repos/docker/compose/releases?per_page=${left}&page=${page}")
+  echo "Downloading page ${page}"
+  next_page=$(curl2 -fsSL "https://api.github.com/repos/docker/compose/releases?per_page=${left}&page=${page}")
 
   IFS=$'\n'
-  cmds=($(sed -En 's@ *"browser_download_url": "(.*/download/v?(.*)/docker-compose-(linux-x86_64|Linux-x86_64|linux-amd64))"@curl -L -o '"${download_dir}/docker-compose-"'\2 \1@p' <<< "${next_page}"))
+  cmds=($(sed -En 's@ *"browser_download_url": "(.*/download/v?(.*)/docker-compose-(linux-x86_64|Linux-x86_64|linux-amd64))"@curl -fsSL -o '"${download_dir}/docker-compose-"'\2 \1@p' <<< "${next_page}"))
   filenames=($(awk '{print $4}' <<< "${cmds[*]}"))
 
   for i in "${!cmds[@]}"; do
     if [ ! -f "${filenames[i]}" ]; then
+      echo "Downloading ${filenames[i]}"
       eval "${cmds[i]}"
       chmod 755 "${filenames[i]}"
     fi

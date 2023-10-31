@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# $HOME/.docker/cli-plugins
+# %USERPROFILE%\.docker\cli-plugins
+# C:\ProgramData\Docker\cli-plugins
+for d in /usr/local/lib/docker/cli-plugins \
+         /usr/local/libexec/docker/cli-plugins \
+         /usr/lib/docker/cli-plugins \
+         /usr/libexec/docker/cli-plugins; do
+  if command -v "${d}/docker-compose" &> /dev/null; then
+    : exec "${d}/docker-compose" "${@}"
+  fi
+done
+
+function docker_cli_plugin_metadata() {
+	if [ -z "${DOCKER_COMPOSE_VERSION}" ]; then
+		# export DOCKER_COMPOSE_VERSION="$(docker-compose --version | cut -d " " -f 3 | cut -d "," -f 1)"
+		export DOCKER_COMPOSE_VERSION="$(docker-compose --version | cut -d " " -f 4 | cut -d "," -f 1)"
+	fi
+
+	local vendor="Docker Inc."
+	local url="https://www.docker.com"
+	local description="Docker Compose"
+	cat <<-EOF
+{
+     "SchemaVersion": "0.1.0",
+     "Vendor": "${vendor}",
+     "Version": "${DOCKER_COMPOSE_VERSION}",
+     "URL": "${url}",
+     "ShortDescription": "${description}"
+}
+EOF
+}
+
+case "$1" in
+	docker-cli-plugin-metadata)
+		docker_cli_plugin_metadata
+		;;
+	*)
+		exec docker-compose "${@}"
+		;;
+esac
