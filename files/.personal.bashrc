@@ -270,11 +270,16 @@ __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
 'fi)'"${OS_PROMPT}"' \W" "]$ ";
 __ps1_time=$(($(get_time_nanoseconds)-__ps1_time+500000));
 __ps1_time="${__ps1_time::${#__ps1_time}-6}";
-if [ "${__ps1_time}" -gt "250" ]; then
+__ps1_time_limit=250
+if [ "${OS-}" = "Windows_NT" ]; then
+  __ps1_time_limit=500
+fi
+if [ "${__ps1_time}" -gt "${__ps1_time_limit}" ]; then
   echo "Git took ${__ps1_time}ms, this is longer than expected." >&2
   echo "Consider calling: quick_git_ps1 or set DISABLE_GIT_PROMPT=1" >& 2
-fi;
-touch ~/.last_ran_command;
+fi
+unset __ps1_time_limit __ps1_time __ps1_rv
+touch ~/.last_ran_command
 my_vte_prompt_command'
 # PROMPT_COMMAND+=$'; printf "\033]0;%s@%s(%s):%s\033\\\\" "${USER}" "${HOSTNAME%%.*}" -1 "${PWD}"'
 # To add a custom terminal title, add '; printf "\033]0;CUSTOM TITLE\007"' to
