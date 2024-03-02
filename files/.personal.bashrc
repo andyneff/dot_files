@@ -15,8 +15,8 @@ umask 0022
 
 # If not running interactively, don't do anything
 case $- in
-    *i*) ;;
-      *) return;;
+  *i*) ;;
+  *) return;;
 esac
 
 ###########################
@@ -65,26 +65,6 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
-
-function add_element_post ()
-{
-  target=$1
-  local IFS=':'
-  t=( ${!target} )
-
-  needToAdd=1
-  for t1 in "${t[@]}"; do
-    if [ $t1 == $2 ]; then
-      needToAdd=0
-      break
-    fi
-  done
-
-  if [ $needToAdd == 1 ]; then
-    t=( ${t[@]} $2 )
-    export $target="${t[*]}"
-  fi
-}
 
 if [ -n "${DISPLAY+set}" ]; then
   _ORIGINAL_DISPLAY="${DISPLAY}"
@@ -146,6 +126,9 @@ if [ "${X_WORKING}" = "1" ]; then
     export EDITOR=vim
   fi
 fi
+
+# add_element_post
+source ~/.dot/external/dot_core/external/vsi_common/linux/elements.bsh
 
 add_element_post PATH ~/bin
 #add_element_post PATH /opt/projects/just/vsi_common/linux
@@ -1234,7 +1217,7 @@ function auto_agent()
       touch ~/.last_ran_command
       # Store the last bash pid running this function
       echo $$ > ~/.ssh/.watch_ssh.pid
-      while kill -0 "${SSH_AGENT_PID}" && (( $(date '+%s') - $(date -r ~/.last_ran_command '+%s') < 1*3600*24 )); do
+      while kill -0 "${SSH_AGENT_PID}" && (( $(date '+%s') - $(date -r ~/.last_ran_command '+%s') < ${SSH_AGENT_TTL_DAYS-1}*3600*24 )); do
         # In case this function get called multiple time, last one wins, only need one
         if [ "$(cat ~/.ssh/.watch_ssh.pid)" != "$$" ]; then
           return
