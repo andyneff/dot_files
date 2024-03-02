@@ -128,9 +128,10 @@ if [ "${X_WORKING}" = "1" ]; then
 fi
 
 # add_element_post
+export VSI_COMMON_DIR=~/.dot/external/dot_core/external/vsi_common
 source ~/.dot/external/dot_core/external/vsi_common/linux/elements.bsh
 
-add_element_post PATH ~/bin
+add_element_post PATH ~/bin:"${VSI_COMMON_DIR}"/linux
 #add_element_post PATH /opt/projects/just/vsi_common/linux
 #add_element_pre PYTHONPATH /home/andy/tools/
 #add_element_pre PYTHONPATH /usr/local/lib64/python2.7/site-packages
@@ -1244,6 +1245,8 @@ function auto_agent()
     fi
     unset watch_ssh_agent
   fi
+
+  touch ~/.ssh/auto_agent
 }
 
 if [ -e ~/.ssh/auto_agent ]; then
