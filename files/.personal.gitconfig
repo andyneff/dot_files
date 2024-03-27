@@ -60,6 +60,7 @@
 	ls-ignored = "List ignored files in the current repo"
 	mfa = "Trigger 2fa on gitlab server"
   http2git = "Convert http url to git url, push only if it is reachable without auth"
+  find-merge = "Find what merge commit is responsible for another commit ($1, required) being in this branch ($2, default HEAD)"
 [alias]
 	# To define a complex alias:
 	# git config --global alias.alias-name '!'"$(cat << 'EOF'
@@ -91,7 +92,7 @@
 	st1 = !git -c color.status=always status -s | while IFS='' read line\\\\; do IFS=' ' blah=($line); echo $(stat -c %z ${blah[1]}) ${line}; IFS='';" done | sort | cut -c 37-
 	st = !git -c color.status=always status -s | "while IFS='' read line; do IFS=' ' blah=($line); echo \"$(stat -c %z ${blah[1]}) ${line}\"; IFS=''; done" | sort | cut -c 37-
 	l = log --decorate --graph
-	la = !"git log --decorate --graph $(git branch --color=never -a --contains $(git rev-list HEAD | tail -n1) | sed '/ detached at /d; s|^..||; s| -> .*||')"
+	la = !"git log --decorate --graph $(git branch --color=never -a --contains $(git rev-list HEAD | tail -n1) | sed '/ detached /d; s|^..||; s| -> .*||') --"
 	# pushall = !git remote | xargs -L1 -I{} git push {}
 	# fetchall = fetch --all
 	# branches = !git branch && git submodule foreach git branch
@@ -152,6 +153,9 @@
 	ls-ignored = "ls-files -io --exclude-standard"
 	mfa = ! echo $1 | ssh git@gitlab.vsi-ri.com 2fa_verify
   http2git = "!bash -c '. ~/.dot/external/dot_core/external/vsi_common/linux/git_functions.bsh; convert_git_remote_http_to_git \"${@}\"' -- "
+  # https://stackoverflow.com/a/30998048/4166604
+  find-merge = "!bash -xvc 'commit=${1} && branch=${2:-HEAD} && (git rev-list ${commit}..${branch} --ancestry-path | cat -n; git rev-list ${commit}..${branch} --first-parent | cat -n) | sort -k2 -s | uniq -f1 -d | sort -n | tail -1 | cut -f2' --"
+
 [http]
 	sslVerify = true
 [color]

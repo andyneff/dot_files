@@ -131,7 +131,8 @@ fi
 export VSI_COMMON_DIR=~/.dot/external/dot_core/external/vsi_common
 source ~/.dot/external/dot_core/external/vsi_common/linux/elements.bsh
 
-add_element_post PATH ~/bin:"${VSI_COMMON_DIR}"/linux
+add_element_post PATH ~/bin:"$(echo ~/.dot/external/dot_core/external/vsi_common/linux)"
+# add_element_post PATH ~/bin
 #add_element_post PATH /opt/projects/just/vsi_common/linux
 #add_element_pre PYTHONPATH /home/andy/tools/
 #add_element_pre PYTHONPATH /usr/local/lib64/python2.7/site-packages
@@ -741,6 +742,51 @@ function jwt()
   # openssl x509 -noout -text -inform PEM <<< "${pub_cert}"
 }
 
+#**
+# .. function:: docker_top_with_nspid
+#
+# Insert a NSPID column before the PID with the container's namespace pid in it
+#
+# :Arguments: ``$1``... - Docker's arguments include ``top``
+#
+# .. note::
+#
+#    Should handle cases that even ``docker`` doesn't handle yet, like ``CMD`` coming before ``pid``. But will not handle no-header, but neither does ``docker``.
+#**
+function docker_top_with_nspid()
+{
+  local IFS=$'\n'
+  local top_lines=($(command docker "${@}"))
+  IFS=$' \t\n'
+
+  # _Docker_ requires the PID field, so it's always there, and must have header, so no-header option is not possible
+  # https://github.com/docker/docker-ce/blob/44a430f4c43e61c95d4e9e9fd6a0573fa113a119/components/engine/daemon/top_unix.go#L81
+
+  # Figure out PID offset
+  local substr_index
+  # If PID is first
+  if [[ ${top_lines[0]} =~ ^PID( |$) ]]; then
+    substr_index=0
+  # If PID is last
+  elif [[ ${top_lines[0]} = *\ PID ]]; then
+    substr_index=$((${#top_lines[0]}-3))
+  else
+    # if it's not first or last, then it is surrounded by spaces
+    substr_index=${top_lines[0]% PID *}
+    substr_index=$((${#substr_index}+1))
+  fi
+
+  local index
+  # Print header
+  echo "${top_lines[0]:0:${substr_index}}$(printf "%-20s" NSPID)${top_lines[0]:${substr_index}:${#top_lines[0]}}"
+  for (( index=1; index<${#top_lines[@]}; index++ )); do
+    top_line=(${top_lines[index]:${substr_index}:${#top_lines[index]}})
+    # figure out nspid
+    nspid=$(cat /proc/${top_line[0]}/status | sed -n 's|NSpid:[ \t]*[0-9]*[ \t]*||p')
+    echo "${top_lines[index]:0:${substr_index}}$(printf "%-20s" "${nspid}")${top_lines[index]:${substr_index}:${#top_lines[index]}}"
+  done
+}
+
 function docker_fun()
 {
   local args=("${@}")
@@ -754,6 +800,10 @@ function docker_fun()
         ;;
       -*|image)
         shift 1
+        ;;
+      top)
+        docker_top_with_nspid "${args[@]}"
+        return
         ;;
       images|ls)
         command docker "${args[@]}" | sed -E 's|^([^ ]*) ( *)([^ ]*)|\1:\3\2|'
@@ -911,6 +961,20 @@ alias grep="grep_fun"
 
 # alias myeclipse="env GIT_SSH=/usr/bin/ssh /opt/software/eclipse/luna/eclipse"
 alias rm="rm -i"
+
+# json powered grep, output looks like "grep -Hn" a little even. Not to be confused
+# with gron, which produces a greppable representastion of a json document
+# Note: Line number is always the last line
+# $1 - jq filter (but it's really part of an [] array. That means if you used a comma
+#      separated pattern, each one will be a column
+# $2... - filenames to parse
+function jrep()
+{
+  local filter=$1
+  shift 1
+
+  jq -r $'["\x1b[35m"+input_filename+"\x1b[36m:\x1b[32m"+(input_line_number|tostring)+"\x1b[36m:\x1b[0m", '"${filter}"']|@tsv' ${@+"${@}"}
+}
 
 ## Custer ##
 

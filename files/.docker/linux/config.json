@@ -1,7 +1,10 @@
 {
 	"auths": {
 		"419919570562.dkr.ecr.us-east-1.amazonaws.com": {},
-		"https://index.docker.io/v1/": {}
+		"dmzregistry.azurecr.us": {},
+		"https://index.docker.io/v1/": {},
+		"registry.dso.xc.nga.mil": {},
+		"registry.wriva-iarpa.com": {}
 	},
 	"credsStore": "pass_safe"
 }
