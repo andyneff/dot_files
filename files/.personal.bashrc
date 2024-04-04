@@ -128,12 +128,16 @@ if [ "${X_WORKING}" = "1" ]; then
 fi
 
 # add_element_post
-export VSI_COMMON_DIR=~/.dot/external/dot_core/external/vsi_common
-source ~/.dot/external/dot_core/external/vsi_common/linux/elements.bsh
-
-add_element_post PATH ~/bin:"$(echo ~/.dot/external/dot_core/external/vsi_common/linux)"
-# add_element_post PATH ~/bin
-#add_element_post PATH /opt/projects/just/vsi_common/linux
+if [ -z "${PRE_VSI_COMMON_PATH+set}" ]; then
+  PRE_VSI_COMMON_PATH=${PATH}
+fi
+export PATH=$(
+  source ~/.dot/external/dot_core/external/vsi_common/linux/elements.bsh
+  add_element_post PATH ~/bin:"$(echo ~/.dot/external/dot_core/external/vsi_common/linux)"
+#   add_element_post PATH ~/bin
+#   add_element_post PATH /opt/projects/just/vsi_common/linux
+  echo "${PATH}"
+)
 #add_element_pre PYTHONPATH /home/andy/tools/
 #add_element_pre PYTHONPATH /usr/local/lib64/python2.7/site-packages
 
