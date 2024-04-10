@@ -1214,7 +1214,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 #   autojust - Auto source your just setup file, and start using just
 function just()
 {
-  if [[ $(type -at just) == *file* ]]; then
+  if [[ $(type -at just) == *file* ]] && [ -n "${JUST_SETUP_SCRIPT+set}" ]; then
     unset just
     command just ${@+"${@}"}
   elif [ -e setup.env ]; then
