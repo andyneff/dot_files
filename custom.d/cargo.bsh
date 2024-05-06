@@ -1,0 +1,6 @@
+#!/usr/bin/env false
+
+skip_if_env SKIP_CARGO_INSTALL || return 0
+
+# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash /dev/stdin --profile minimal --no-modify-path
+curl -sSf https://sh.rustup.rs | bash /dev/stdin --profile minimal -y --no-modify-path

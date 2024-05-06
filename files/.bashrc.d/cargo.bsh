@@ -1,0 +1,15 @@
+#!/usr/bin/env false bash
+
+if [ -d ~/.cargo ]; then # noquote
+  export CARGO_HOME=~/.cargo
+  # # Moved to .personal.bashrc for now...
+  # time export PATH=$(
+  #   source ~/.dot/external/dot_core/external/vsi_common/linux/elements.bsh
+  #   IFS=: add_element_post PATH ~/.cargo/.bin
+  #   echo "${PATH}"
+  # )
+fi
+
+if [ -d ~/.rustup ]; then # noquote
+  export RUSTUP_HOME=~/.rustup
+fi

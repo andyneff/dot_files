@@ -1,0 +1,1 @@
+SKIP_CARGO_INSTALL Skip the installation of rust via rustup and cargo

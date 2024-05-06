@@ -132,8 +132,13 @@ if [ -z "${PRE_VSI_COMMON_PATH+set}" ]; then
   PRE_VSI_COMMON_PATH=${PATH}
 fi
 export PATH=$(
+  # I don't want this sourced in my bash environment, too noisy
   source ~/.dot/external/dot_core/external/vsi_common/linux/elements.bsh
-  IFS=: add_element_post PATH ~/bin:"$(echo ~/.dot/external/dot_core/external/vsi_common/linux)"
+  IFS=: add_element_post PATH ~/bin
+  if [ -d ~/.cargo/bin ]; then
+    IFS=: add_element_post PATH ~/.cargo/bin
+  fi
+  IFS=: add_element_post PATH "$(echo ~/.dot/external/dot_core/external/vsi_common/linux)"
   echo "${PATH}"
 )
 #IFS=: add_element_pre PYTHONPATH /home/andy/tools/
@@ -141,6 +146,19 @@ export PATH=$(
 
 export PYTHONSTARTUP=~/.pyrc
 #export PS1='\[\e[40;93m\]\w\[\e[0m\]\n[\u@\h \W]$ '
+
+################
+### bashrc.d ###
+################
+
+if [ -d ~/.bashrc.d ]; then
+  for bashrc_file in ~/.bashrc.d/*; do
+    if [ -r "${bashrc_file}" ]; then
+      source "${bashrc_file}"
+    fi
+  done
+fi
+unset bashrc_file
 
 ################
 ### Bindings ###
