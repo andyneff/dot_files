@@ -1,6 +1,8 @@
 [user]
 	name = Andy Neff
 	email = andy@visionsystemsinc.com
+[pull]
+	rebase = false
 [push]
 	default = current
 
