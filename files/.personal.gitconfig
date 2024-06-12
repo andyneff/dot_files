@@ -35,6 +35,7 @@
 	diffss = "Git diff with submodules set to short"
 	pretendchanged = "Mark a file as changed, even if it isn't. \\x1b[33mUsage\\x1b[0m: git pretendchanged <filename>"
 	pretendunchanged = "Mark a file as not changed, even if it is. \\x1b[33mUsage\\x1b[0m: git pretendunchanged <filename>"
+	pretendlist = "List files that have been marked via pretendunchanged (assume-unchanged)"
 	cat = "Show the contents of a file from specific commit. \\x1b[33mUsage\\x1b[0m: git cat <ref> <filename>"
 	newest-ancestor = "Finds the most recent commit that is common between two refs. \\x1b[33mUsage\\x1b[0m: git newest-ancestor <ref> <ref>"
 	oldest-ancestor = "Finds the oldest commit that is common between two refs. \\x1b[33mUsage\\x1b[0m: git newest-ancestor <ref> <ref>. \n\
@@ -118,6 +119,7 @@
 	diffss = diff --submodule=short
 	pretendchanged = update-index --no-assume-unchanged
 	pretendunchanged = update-index --assume-unchanged
+	pretendlist = !git ls-files -v | grep '^[[:lower:]]'
 	cat = !git show $1:"$2"
 	newest-ancestor = merge-base
 	oldest-ancestor = !bash -c 'diff --old-line-format='' --new-line-format='' <(git rev-list --first-parent "${1:-master}") <(git rev-list --first-parent "${2:-HEAD}") | head -1' -
