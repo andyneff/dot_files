@@ -845,7 +845,7 @@ alias docker=docker_fun
 alias forcessh='ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
 alias ssh2="ssh -o ControlPath=none"
 alias sshki="ssh2 -o PreferredAuthentications=keyboard-interactive"
-alias scp2="scp -o ControlPath=none"
+alias scp2="scp -O -o ControlPath=none"
 alias ssh3="ssh -o 'UserKnownHostsFile=/dev/null'"
 alias ssh_check='ssh -O check'
 alias ssh_close='ssh -O exit'
@@ -1505,3 +1505,40 @@ function progress()
   kill "${cpid}"
   printf '\e]2;%s\e\\' "$(toc_ms)"
 )
+
+#**
+# .. function:: get_download_size
+#
+# Get size of download.
+#
+# * Will follow redirects
+# * Prints out HTTP version to stderr
+# * Prints out content size _if_ it exists in the header, else it is unknown size
+#
+# :Arguments: * ``$1`` - URL
+#
+#  .. rubric:: Example:
+#
+#  .. code:: bash
+#
+#     get_download_size https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-armv6
+#     HTTP/2 302
+#     0
+#     HTTP/2 200
+#     59875317
+#
+#     get_download_size google.com
+#     HTTP/1.1 301 Moved Permanently
+#     219
+#     HTTP/1.1 200 OK
+#     # No final size
+#
+#     get_download_size https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.5.0-amd64-netinst.iso
+#     HTTP/1.1 302 Found
+#     HTTP/1.1 200 OK
+#     659554304
+#**
+function get_download_size()
+{
+  curl -s -L -I "${1}" | sed -n  -e 's|^content-length: *||pi; /^[hH][tT][tT][pP]\//{w /dev/stderr' -e '}'
+}
