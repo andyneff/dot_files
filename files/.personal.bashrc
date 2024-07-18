@@ -861,6 +861,13 @@ function ssh_check_socket()
 
 # Disable capture mouse clicks to terminal which tmux turn on, and gets left on if ssh connection disconnects.
 alias mouse_reset="echo -n $'\x1b[?1000l'"
+alias buffer_reset="echo -n $'\x1b[?1049l'" # fixes scroll bar and returns to original buffer
+
+# More codes that tmux uses, but I don't see much additional benifit
+# $'\033[?1000l\033[?1002l\033[?1003l'; echo $'\033[?1006l\033[?1005l'
+# $'\033[?1007l' - Fixes scroll wheel scrolls bash history, but it doesn't renabled the scroll bar still
+# $'\033[?1049l' - This will return to the normal buffer and enabled scroll bar again, but you won't be able to scroll in the alternative buffer
+# TL;DR, just run `reset`
 
 function ssh_close_all()
 {
