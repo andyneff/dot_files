@@ -1,0 +1,27 @@
+#!/usr/bin/env false
+
+mkdir -p "${DOT_DIR}/tmp"
+
+if [ "${OS-}" = "Windows_NT" ]; then
+  curl -fsSLo "${DOT_DIR}/tmp/azcopy.zip" https://aka.ms/downloadazcopy-v10-windows
+  unzip "${DOT_DIR}/tmp/azcopy.zip"
+  mv "${DOT_DIR}"/tmp/azcopy_*/azcopy.exe ~/bin/
+elif [[ ${OSTYPE-} = darwin* ]]; then
+  if [[ $(uname -a) = *arm64* ]]; then
+    curl -fsSLo "${DOT_DIR}/tmp/azcopy.tgz" https://aka.ms/downloadazcopy-v10-mac-arm64
+  else
+    curl -fsSLo "${DOT_DIR}/tmp/azcopy.tgz" https://aka.ms/downloadazcopy-v10-mac
+  fi
+  unzip "${DOT_DIR}/tmp/azcopy.zip" -d "${DOT_DIR}/tmp"
+  mv "${DOT_DIR}"/tmp/azcopy_*/azcopy ~/bin/
+else
+  if [[ $(uname -a) = *arm64* ]]; then
+    curl -fsSLo "${DOT_DIR}/tmp/azcopy.tgz" https://aka.ms/downloadazcopy-v10-linux-arm64
+  else
+    curl -fsSLo "${DOT_DIR}/tmp/azcopy.tgz" https://aka.ms/downloadazcopy-v10-linux
+  fi
+  tar xf "${DOT_DIR}/tmp/azcopy.tgz" -C "${DOT_DIR}/tmp"
+  mv "${DOT_DIR}"/tmp/azcopy_*/azcopy ~/bin/
+fi
+
+rm -r "${DOT_DIR}/tmp"

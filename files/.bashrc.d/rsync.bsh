@@ -1,0 +1,1 @@
+alias rsync_progress="rsync --info=progress2,stats"

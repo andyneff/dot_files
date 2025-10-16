@@ -267,7 +267,7 @@ __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
 '    fi;'\
 '  done)'\
 '${SINGULARITY_NAME+\[\e[30;41m\]{${SINGULARITY_NAME}\}\[\e[0m\] }'\
-'${VIRTUAL_ENV+($(basename "${VIRTUAL_ENV}")) }$(printf -v x "%*s" ${SHLVL}; echo -n "${x// /[}")\u@'"${hostcolor-}"'${BC_HOST+${BC_HOST}(}\h${BC_HOST+)}\[\e[0m\] $('\
+'${CONDA_PROMPT_MODIFIER-}${VIRTUAL_ENV+($(basename "${VIRTUAL_ENV}")) }$(printf -v x "%*s" ${SHLVL}; echo -n "${x// /[}")\u@'"${hostcolor-}"'${BC_HOST+${BC_HOST}(}\h${BC_HOST+)}\[\e[0m\] $('\
 'if [ "$__ps1_rv" != "0" ]; then'\
 '  echo "\[\e[41m\]${__ps1_rv}\[\e[0m\]";'\
 'else'\
@@ -375,7 +375,7 @@ if [ "${BASH_VERSINFO[0]}" -ge "5" -a -n "${WSL_INTEROP+set}" ]; then
     fi
   }
 
-  complete -I -F _custom_initial_word_complete
+  # complete -I -F _custom_initial_word_complete
 fi
 
 # WSL
@@ -1548,4 +1548,29 @@ function progress()
 function get_download_size()
 {
   curl -s -L -I "${1}" | sed -n  -e 's|^content-length: *||pi; /^[hH][tT][tT][pP]\//{w /dev/stderr' -e '}'
+}
+
+function remote_watch_file()
+{ # $1 - hostname, $2 - filename, $3... cmd to exectues
+  local host=${1}
+  local filename=${2}
+  shift 2
+
+  local before=$(ssh -T "${host}" ls --full-time -la "${filename}")
+
+  while :; do
+    before=$(echo 'while sleep 1; do
+      after=$(ls --full-time -la "'"${filename}"'")
+        if [ "'"${before}"'" != "${after}" ]; then
+          # Could also use lsof the exact same way
+          while fuser "'"${filename}"'" &> /dev/null; do
+            :
+          done
+          after=$(ls --full-time -la "'"${filename}"'")
+          break
+        fi
+      done
+      echo "${after}"' | ssh -T "${host}")
+    "${@}"
+  done
 }
