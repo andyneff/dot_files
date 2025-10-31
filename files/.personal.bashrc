@@ -270,7 +270,6 @@ __git_ps1 "\[\e[40;93m\]\w\[\e[0m\]\n'\
 '  done)'\
 '${SINGULARITY_NAME+\[\e[30;41m\]{${SINGULARITY_NAME}\}\[\e[0m\] }'\
 '${CONDA_PROMPT_MODIFIER-}${VIRTUAL_ENV+($(basename "${VIRTUAL_ENV}")) }$(printf -v x "%*s" ${SHLVL}; echo -n "${x// /[}")\u@'"${hostcolor-}"'${BC_HOST+${BC_HOST}(}\h${BC_HOST+)}\[\e[0m\] $('\
-'${VIRTUAL_ENV+($(basename "${VIRTUAL_ENV}")) }$(printf -v x "%*s" ${SHLVL}; echo -n "${x// /[}")\u@'"${hostcolor-}"'${BC_HOST+${BC_HOST}(}\h${BC_HOST+)}\[\e[0m\] $('\
 'if [ "$__ps1_rv" != "0" ]; then'\
 '  echo "\[\e[41m\]${__ps1_rv}\[\e[0m\]";'\
 'else'\
