@@ -202,3 +202,5 @@
 [advice]
 	skippedCherryPicks = false
 	addEmptyPathspec = false
+[protocol.file]
+	allow = always
