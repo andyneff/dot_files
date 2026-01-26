@@ -369,15 +369,46 @@ if [ "${BASH_VERSINFO[0]}" -ge "5" -a -n "${WSL_INTEROP+set}" ]; then
   function _custom_initial_word_complete()
   {
     if [ "${2-}" != "" ]; then
+      local i
       if [ "${2::3}" == "wor" ]; then
-        COMPREPLY=($(compgen -c "${2}" | \grep -v workfolderssvc))
+        COMPREPLY=($(compgen -c -d "${2}" | \grep -v workfolderssvc))
       else
-        COMPREPLY=($(compgen -c "${2}"))
+        COMPREPLY=($(compgen -c -d "${2}"))
+      fi
+      if [ -d "${COMPREPLY[0]}" ]; then
+        local unique=1
+        # could just use uniq
+        for i in "${!COMPREPLY[@]}"; do
+          if [ "${COMPREPLY[0]}" != "${COMPREPLY[i]}" ]; then
+            unique=0
+            break
+          fi
+        done
+        if [ "${unique}" = "1" ]; then
+          COMPREPLY=()
+        fi
       fi
     fi
   }
 
-  # complete -I -F _custom_initial_word_complete
+  # complete -I -o default -F _custom_initial_word_complete
+
+  # function _identity_complete(){
+  #   : declare -p COMPREPLY
+  # }
+
+  # # handle bashrc being sourced twice
+  # if [ -z "${_comp_original_initial_word+set}" ]; then
+  #   if _comp_original_initial_word=$(complete -pI); then
+  #     # use sed to remove arguments that may appear before or after the function name
+  #     _comp_original_initial_word=$(sed -E 's|* -F ([^ ]*).*|\1|' <<< _comp_original_initial_word)
+  #     declare -n _comp_original_initial_word="${_comp_original_initial_word}"
+  #   else
+  #     unset _comp_original_initial_word
+  #   fi
+  # fi
+  # The wsl issue seems to be limited to the initial non-assigned work (the zeroth argument)
+  # complete -o default -F _identity_complete -I
 fi
 
 # WSL

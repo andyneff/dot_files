@@ -1,0 +1,84 @@
+
+function cpu_monitor()
+{
+  local rate=5
+  local -i t0=$(($(date +%s) / rate * rate))
+
+  # header
+  echo "time user nice system idle iowait irq softirq steal guest guest_nice"
+  while :; do
+    t1="$(date +%s.%N)"
+    echo -n "${t1} "
+    # read first line, remove cpu column
+    sed  's|^cpu  *||;q' /proc/stat
+    # Precision sleeping
+    awk 'BEGIN {t0='"${t0}"'; t1='"${t1}"'; ('"${rate}"'+t0-t1>0)?system("sleep "'"${rate}"'+t0-t1):0}'
+    t0+=${rate}
+  done
+}
+
+function memory_cpu_monitor()
+{
+  local rate=5
+
+  local last_pids=()
+  local pids
+  local t1
+  local -i t0=$(($(date +%s) / rate * rate))
+  local i
+  local pid
+  local -A pid_mem
+  local -A pid_cpu
+  local -A pid_oom
+  local available
+
+  while :; do
+    pids=($(pgrep "${@}" | sort -n))
+    if [ "${#pids[@]}" = "0" ]; then
+      sleep 1
+      # Have to recalculate t0, or else this will make the precision time think
+      # is it far behind
+      t0=$(($(date +%s) / rate * rate))
+      continue
+    fi
+    if [ "${pids[*]}" != "${last_pids[*]}" ]; then
+      ps -o pid,ppid,cmd "${pids[@]}"
+      echo "$(date -Iseconds)" "${#pids[@]}" "${pids[@]/#/mem_}" "${pids[@]/#/cpu_}" "${pids[@]/#/oom_} available_mem"
+      last_pids=("${pids[@]}")
+    fi
+    pid_raw_info=($(ps -ho pid,rss,pcpu "${pids[@]}"))
+    pid_mem=()
+    pid_cpu=()
+    for (( i=0; i<${#pid_raw_info[@]}; i+=3 )); do
+      pid=${pid_raw_info[i]}
+      pid_mem[${pid}]=${pid_raw_info[i+1]}
+      pid_cpu[${pid}]=${pid_raw_info[i+2]}
+    done
+
+    # There is a slight chance that oom_score doesn't exist by the time you get here, resulting in a varying number of columns
+    pid_oom=()
+    for pid in "${pids[@]}"; do
+      # i=$(cat $(printf '/proc/%s/oom_score ' "${pids[@]}"))
+      i=$(cat "/proc/${pid}/oom_score")
+      if [ -n "${i:+set}" ]; then
+        pid_oom[${pid}]="${i}"
+      else
+        unset pid_mem[${pid}]
+        unset pid_cpu[${pid}]
+      fi
+    done
+
+    t1="$(date +%s.%N)"
+    printf '%s ' "${t1}" "${pid_mem[@]}" "${pid_cpu[@]}" "${pid_oom[@]}"
+    printf "$(free | awk 'NR==2 {print $NF}')\n"
+
+    # Precision sleeping
+    awk 'BEGIN {t0='"${t0}"'; t1='"${t1}"'; ('"${rate}"'+t0-t1>0)?system("sleep "'"${rate}"'+t0-t1):0}'
+    t0+=${rate}
+  done
+}
+
+# memory_cpu_monitor -u `id -u` python | tee -a mem.txt
+# export OMP_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 MKL_NUM_THREADS=1 GDAL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+
+# declare -p OMP_NUM_THREADS NUMEXPR_NUM_THREADS MKL_NUM_THREADS GDAL_NUM_THREADS OPENBLAS_NUM_THREADS

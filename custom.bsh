@@ -113,12 +113,12 @@ fi'
     convert_git_remote_http_to_git > /dev/null
   popd &> /dev/null
 
-  if [ ! -e ~/.ssh/id_ed25519_gl ]; then
-    ssh-keygen -f ~/.ssh/id_ed25519_gl -t ed25519
-    validate_ssh_key ~/.ssh/id_ed25519_gl
+  if [ ! -e ~/.ssh/id_ecdsa_gl ]; then
+    ssh-keygen -f ~/.ssh/id_ecdsa_gl -t ecdsa -b 521
+    validate_ssh_key ~/.ssh/id_ecdsa_gl
 
     echo "Add this to gitlab"
-    cat ~/.ssh/id_ed25519_gl.pub
+    cat ~/.ssh/id_ecdsa_gl.pub
   fi
 
   # if [ "${OS-}" = "Windows_NT" -a ! -f ~/bin/python310/python.exe ] || \
