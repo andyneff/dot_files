@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "docker-cli-plugin-metadata" ]]; then
+  cat << EOF
+{
+  "SchemaVersion": "0.1.0",
+  "Vendor": "andy.neff"
+}
+EOF
+  exit
+fi
+
+while (( ${#} )); do
+  if [ "${1}" = "restore" ]; then
+    shift 1
+    break
+  fi
+  shift 1
+done
+
+function usage()
+{
+  echo 'Usage:  docker restore TAR [TAR...]'
+  echo
+  echo 'Restores docker volumes from tarballs'
+}
+
+if (( ! ${#} )); then
+  usage
+  exit
+fi
+
+for x in "${@}"; do
+  labels=$(tar xf "${1}" labels.json -O)
+  volume=$(echo "${labels}" | jq -r '.Name')
+  number_of_labels=$(echo "${labels}" | jq '.Labels | length')
+  parsed_labels=()
+  for (( i=0; i<number_of_labels; i++ )); do
+    parsed_labels+=(--label $(echo "${labels}" | jq -r '.Labels | to_entries['"${i}"'] | "\(.key)=\"\(.value)\""'))
+  done
+
+  docker volume create "${parsed_labels[@]}" "${volume}"
+  docker run -i --rm -v "${volume}:/data:ro" alpine sh -c "tar xz" < "${tarfile}"
+
+  shift 1
+done

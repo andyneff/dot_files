@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "docker-cli-plugin-metadata" ]]; then
+  cat << EOF
+{
+  "SchemaVersion": "0.1.0",
+  "Vendor": "andy.neff",
+  "Version": "v0.1.0",
+  "ShortDescription": "Bash based Docker cli-plugin"
+}
+EOF
+  exit
+fi
+
+while (( ${#} )); do
+  if [ "${1}" = "backup" ]; then
+    shift 1
+    break
+  fi
+  shift 1
+done
+
+function usage()
+{
+  echo 'Usage:  docker backup [OPTIONS] VOLUME [VOLUME...]'
+  echo
+  echo 'Backs up volumes to local tarballs'
+  echo
+  echo 'Options:'
+  echo '  -c/--compose name  Uses compose volume names instead of raw docker names'
+  echo '  -a/--all           Backs up all volumes instead of volumes by name. When'
+  echo '                     combines with --compose, backs up all volumes for that'
+  echo '                     compose project'
+}
+
+if (( ! ${#} )); then
+  usage
+  exit
+fi
+
+compose=0
+all=0
+volumes=()
+
+while (( ${#} )); do
+  case "${1}" in
+    --compose|-c|--compose=*)
+      if [[ ${1} = *=* ]]; then
+        compose=${1#--compose=}
+      else
+        compose=${2}
+        shift 1
+      fi
+      ;;
+    --all|-a)
+      all=1
+      ;;
+    --help)
+      usage
+      exit
+      ;;
+    *)
+      volumes+=("${1}")
+      ;;
+  esac
+  shift 1
+done
+
+if [ "${compose}" != "0" ]; then
+  for v in "${!volumes[@]}"; do
+    volumes[v]="${compose}_${volumes[v]}"
+  done
+fi
+
+if [ "${all}" = "1" ]; then
+  if [ "${compose}" != "0" ]; then
+    volumes+=($(docker volume ls --filter label=com.docker.compose.project="${compose}" --format '{{.Name}}'))
+  else
+    volumes=($(docker volume ls --format '{{.Name}}'))
+  fi
+fi
+
+datetime=$(date -Is)
+datetime=${datetime//:/.}
+
+for volume in "${volumes[@]}"; do
+  echo "Processing ${volume}..."
+  tarfile="$(pwd)/${volume}_${datetime}.tgz"
+  #labels=$(docker volume inspect "${volume}" | jq '.[0] | {Name, Labels}')
+  docker volume inspect "${volume}" | jq '.[0] | {Name, Labels}' | \
+  docker run -i --rm -v "${volume}:/data:ro" alpine sh -c "
+    cat - > /labels.json
+    tar cz labels.json data
+  " > "${tarfile}"
+done
