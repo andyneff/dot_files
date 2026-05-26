@@ -13,3 +13,4 @@ if v:version < 802
 endif
 
 set backspace=indent,eol,start
+
