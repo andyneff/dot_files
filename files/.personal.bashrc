@@ -858,10 +858,10 @@ function docker_fun()
         docker_top_with_nspid "${args[@]}"
         return
         ;;
-      images|ls)
-        command docker "${args[@]}" | sed -E 's|^([^ ]*) ( *)([^ ]*)|\1:\3\2|'
-        return
-        ;;
+#      images|ls)
+#        command docker "${args[@]}" | sed -E 's|^([^ ]*) ( *)([^ ]*)|\1:\3\2|'
+#        return
+#        ;;
       *)
         break
         ;;
