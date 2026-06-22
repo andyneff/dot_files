@@ -1,0 +1,3 @@
+#!/usr/bin/env false bash
+
+alias uv-install='curl -LsSf https://astral.sh/uv/install.sh | sh'
